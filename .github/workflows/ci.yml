@@ -1,0 +1,65 @@
+# .github/workflows/ci.yml
+name: MPElectroML CI
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master, develop ]
+
+jobs:
+  build_and_test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false # Allow other Python versions to test even if one fails
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"] # Specify Python versions to test against
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+        cache: 'pip' # Cache pip dependencies
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        # Install the package itself with its dependencies, including 'test' extras
+        pip install .[test]
+        # Ensure FAIRChem models are handled if tests require them.
+        # This might involve pre-downloading or mocking.
+        # For now, assuming tests that need FAIRChem models are mocked or very light.
+
+    - name: Lint with Flake8 (or Ruff)
+      run: |
+        # Using Flake8 as an example, Ruff is a faster alternative
+        pip install flake8
+        # Stop the build if there are Python syntax errors or undefined names
+        flake8 mpelectroml/ tests/ examples/ --count --select=E9,F63,F7,F82 --show-source --statistics
+        # Exit-zero treats all errors as warnings. For CI, you might want it to fail on errors.
+        # flake8 mpelectroml/ tests/ examples/ --count --exit-zero --max-complexity=25 --max-line-length=127 --statistics
+        # For stricter linting (fail on errors):
+        flake8 mpelectroml/ tests/ examples/ --count --max-complexity=25 --max-line-length=119 --statistics
+
+    - name: Test with Pytest
+      env:
+        # Provide a dummy API key for tests. Tests requiring API calls should be mocked.
+        MP_API_KEY: "ci_dummy_key"
+      run: |
+        pytest tests/ -v --cov=mpelectroml --cov-report=xml --cov-report=term-missing
+        # -v for verbose output
+        # --cov to generate coverage report for the 'mpelectroml' package
+        # --cov-report=xml for Codecov or similar services
+        # --cov-report=term-missing to show missing lines in console
+
+    # Optional: Upload coverage report to Codecov or similar
+    # - name: Upload coverage to Codecov
+    #   uses: codecov/codecov-action@v3
+    #   with:
+    #     token: ${{ secrets.CODECOV_TOKEN }} # If using a private repo or need specific token
+    #     files: ./coverage.xml
+    #     fail_ci_if_error: true
