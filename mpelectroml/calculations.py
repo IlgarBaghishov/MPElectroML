@@ -10,6 +10,7 @@ import logging
 import os
 
 logger = logging.getLogger(__name__)
+PREDICTOR = pretrained_mlip.get_predict_unit("uma-sm", device="cpu")
 
 
 def assign_calculator(atoms: Atoms | None) -> Atoms | None:
@@ -28,8 +29,7 @@ def assign_calculator(atoms: Atoms | None) -> Atoms | None:
     try:
         # Using "uma-sm". Users can check `fairchem.core.pretrained_mlip.available_models` for other options.
         # Device can be "cuda" if a GPU is available and PyTorch is CUDA-enabled.
-        predictor = pretrained_mlip.get_predict_unit("uma-sm", device="cpu")
-        calc = FAIRChemCalculator(predictor, task_name="omat")
+        calc = FAIRChemCalculator(PREDICTOR, task_name="omat")
         atoms.calc = calc
         logger.debug(f"Assigned FAIRChem calculator (uma-sm) to atoms: {atoms.get_chemical_formula()}")
     except Exception as e:
