@@ -47,7 +47,8 @@ def setup_logging(level=logging.INFO, log_file: str | None = None) -> None:
         level=level,
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
         datefmt='%Y-%m-%d %H:%M:%S',
-        handlers=handlers
+        handlers=handlers,
+        force=True
     )
     logger.info(f"Logging configured. Level: {logging.getLevelName(level)}. Output to console" +
                 (f" and file: {log_file}" if log_file else "."))
