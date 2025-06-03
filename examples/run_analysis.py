@@ -31,7 +31,7 @@ SKIP_CALCULATIONS = False  # Skip energy and force calculations
 # Calculation indexing (applies if calculations are not skipped)
 CALC_TYPES = NEW_WORKING_IONS + ["charge", "discharge"]  # Types of structures to calculate energies/forces for
 CALC_IDX_INITS = [0, 0, 0]  # Start index for each type of structure (must match CALC_TYPES length)
-CALC_IDX_FINALS = [10, 10, 10]  # End index for each type of structure (-1 means all remaining)
+CALC_IDX_FINALS = [-1, -1, -1]  # End index for each type of structure (-1 means all remaining)
 
 # Logging settings
 LOG_LEVEL = "INFO"  # "DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"
