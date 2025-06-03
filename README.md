@@ -19,7 +19,7 @@ The project facilitates the exploration of how different working ions might perf
 
 ### Prerequisites
 
--   Python 3.9 or higher.
+-   Python 3.10 or higher.
 -   An active Materials Project API key. You need to set this as an environment variable:
     ```bash
     export MP_API_KEY="YOUR_MP_API_KEY"
@@ -30,34 +30,51 @@ The project facilitates the exploration of how different working ions might perf
 
 1.  **Clone the repository (optional, for development or direct use):**
     ```bash
-    git clone [https://github.com/yourusername/MPElectroML.git](https://github.com/yourusername/MPElectroML.git)  # TODO: Update this URL
+    git clone [https://github.com/IlgarBaghishov/MPElectroML.git](https://github.com/IlgarBaghishov/MPElectroML.git)
     cd MPElectroML
     ```
 
 2.  **Install the package:**
+
     It is recommended to use a virtual environment:
+
     ```bash
     python -m venv venv_mpelectroml
     source venv_mpelectroml/bin/activate  # On Linux/macOS
     # venv_mpelectroml\Scripts\activate    # On Windows
     ```
 
-    Then, install MPElectroML:
-    * For editable mode (if you cloned the repo and want to modify the code):
+    Alternatively, you can use Conda to manage environments.
+
+    **For GPU Support (Recommended for `fairchem` performance):**
+
+    If you want to use GPUs for the FAIRChem model, we recommend to install a GPU-compatible version of PyTorch **before** installing `MPElectroML`. This ensures that `fairchem-core` picks up the correct PyTorch installation.
+
+      * At the time of writing (June 3, 2025), FAIRChem is known to work well with PyTorch version 2.6.0.
+      * First, determine your system's CUDA version (e.g., by running `nvidia-smi`).
+      * Then, visit the [PyTorch website](https://pytorch.org/get-started/locally/) or the [PyTorch previous versions page](https://pytorch.org/get-started/previous-versions/) to find the appropriate installation command. For example, to install PyTorch 2.6.0 with support for CUDA 12.6, the command would be:
+        ```bash
+        pip install torch==2.6.0 --index-url https://download.pytorch.org/whl/cu126
+        ```
+        (Ensure you adjust `cu126` and the index URL if your CUDA version is different, and verify that `torch==2.6.0` is the required version for FAIRChem.)
+
+    **Then, install MPElectroML:**
+
+      * For editable mode (if you cloned the repo and want to modify the code):
         ```bash
         pip install -e .
         ```
-    * To include development and testing dependencies:
+      * To include development and testing dependencies:
         ```bash
         pip install -e .[dev]
         ```
-    * For a standard install (e.g., if installing from PyPI in the future, or from a wheel file):
+      * For a standard install (e.g., if installing from PyPI in the future, or from a wheel file):
         ```bash
         pip install . 
         # or pip install mpelectroml (once published)
         ```
 
-    The FAIRChem library (`fairchem.core`) and its models might have specific installation requirements or might download models on first use. Please refer to the [FAIRChem documentation](https://github.com/FAIRChemistry/fairchem) for details if you encounter issues related to it.
+    The FAIRChem library (`fairchem.core`) and its models might have other specific installation requirements. Please refer to the [FAIRChem documentation](https://github.com/FAIRChemistry/fairchem) for details if you encounter issues related to it.
 
 ## Usage
 

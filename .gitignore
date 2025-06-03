@@ -121,11 +121,15 @@ cython_debug/
 Thumbs.db
 
 # Data output files (example, adjust if you want to track specific outputs)
+examples/ll_out
+examples/Na
 *.log
 *.h5
 *.hdf5
 mpelectroml_output/
 
+# Miscellaneous
+**/\$SCRATCH/
 
 # FAIRChem model cache (example, actual path might vary if downloaded locally)
 # Consider adding if models are downloaded into the project directory by mistake

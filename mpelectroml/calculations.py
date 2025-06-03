@@ -10,7 +10,8 @@ import logging
 import os
 
 logger = logging.getLogger(__name__)
-PREDICTOR = pretrained_mlip.get_predict_unit("uma-sm", device="cpu")
+_PREDICTOR = None
+# PREDICTOR = pretrained_mlip.get_predict_unit("uma-sm", device="cuda")
 
 
 def assign_calculator(atoms: Atoms | None) -> Atoms | None:
@@ -28,8 +29,20 @@ def assign_calculator(atoms: Atoms | None) -> Atoms | None:
         return None
     try:
         # Using "uma-sm". Users can check `fairchem.core.pretrained_mlip.available_models` for other options.
-        # Device can be "cuda" if a GPU is available and PyTorch is CUDA-enabled.
-        calc = FAIRChemCalculator(PREDICTOR, task_name="omat")
+        # Device can be "cuda" or "cpu" depending on if a GPU is available and PyTorch is CUDA-enabled.
+        model_name = "uma-sm"
+        device = "cuda"
+        global _PREDICTOR
+        if _PREDICTOR is None:
+            logger.info(f"Initializing FAIRChem predictor: {model_name} on {device}...")
+            try:
+                _PREDICTOR = pretrained_mlip.get_predict_unit(model_name, device=device)
+                logger.info("FAIRChem predictor initialized successfully.")
+            except Exception as e:
+                logger.error(f"Failed to initialize FAIRChem predictor ('{model_name}'): {e}")
+                _PREDICTOR = None
+                return atoms
+        calc = FAIRChemCalculator(_PREDICTOR, task_name="omat")
         atoms.calc = calc
         logger.debug(f"Assigned FAIRChem calculator (uma-sm) to atoms: {atoms.get_chemical_formula()}")
     except Exception as e:
@@ -245,7 +258,7 @@ def add_energy_forces_to_df(
         df_pairs.at[i, f'{col_prefix}_relaxed_forces'] = relaxed_forces
 
         # Save intermediate results periodically
-        if (i + 1) % 5 == 0:  # Save every 5 processed rows (within the current ion_type_to_process)
+        if (i + 1) % 100 == 0:  # Save every 5 processed rows (within the current ion_type_to_process)
             logger.info(f"Processed up to row {i} for '{ion_type_to_process}', saving intermediate results "
                         f"to {hdf5_output_path}...")
             try:
