@@ -1,4 +1,3 @@
-# mpelectroml/utils.py
 import os
 import logging
 
@@ -55,5 +54,5 @@ def setup_logging(level=logging.INFO, log_file: str | None = None) -> None:
 
 
 # Define constants that might be used across modules, e.g., HDF5 keys
-HDF5_KEY_ELECTRODE_PAIRS = "electrode_pairs_data"  # Key for initial pairs and structures
-HDF5_KEY_WITH_ENERGIES = "electrode_data_with_energies"  # Key for data after energy calculations
+HDF5_KEY_ELECTRODE_PAIRS = "data"  # Key for initial pairs and structures
+HDF5_KEY_WITH_ENERGIES = "data_with_energies"  # Key for data after energy calculations

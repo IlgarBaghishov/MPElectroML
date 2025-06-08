@@ -28,6 +28,12 @@ SKIP_MP_RETRIEVAL = False  # Skip Materials Project data retrieval
 SKIP_NEW_STRUCTURE_CREATION = False  # Skip creation of new working ion discharge structures
 SKIP_CALCULATIONS = False  # Skip energy and force calculations
 
+# Materials Project API fields to retrieve
+MP_ELECTRODE_FIELDS = ["id_charge", "id_discharge"]  # for materials.insertion_electrodes.search().
+# For materials.summary.search (structure and energy_per_atom are required
+# formula is obtained from structure.composition.formula).
+MP_SUMMARY_FIELDS = ["material_id", "structure", "energy_per_atom", "origins"]
+
 # Calculation indexing (applies if calculations are not skipped)
 CALC_TYPES = NEW_WORKING_IONS + ["charge", "discharge"]  # Types of structures to calculate energies/forces for
 CALC_IDX_INITS = [0, 0, 0]  # Start index for each type of structure (must match CALC_TYPES length)
@@ -80,11 +86,11 @@ def run_analysis_workflow():
     # Step 1 & 2: Get Electrode Pairs and Structures from MP
     if not SKIP_MP_RETRIEVAL:
         logger.info(f"Fetching electrode pairs for {WORKING_ION}-ion...")
-        df_main = get_electrode_pairs(working_ion=WORKING_ION, file_dirpath=FILE_DIRPATH, api_key=api_key)
+        df_main = get_electrode_pairs(working_ion=WORKING_ION, api_key=api_key, fields=MP_ELECTRODE_FIELDS)
 
         if not df_main.empty:
             logger.info(f"Fetching structures for {len(df_main)} pairs...")
-            get_structures_from_electrode_pair_ids(df_main, api_key=api_key)
+            get_structures_from_electrode_pair_ids(df_main, api_key=api_key, fields=MP_SUMMARY_FIELDS)
             try:
                 df_main.to_hdf(base_data_hdf5_path, key=HDF5_KEY_ELECTRODE_PAIRS, mode='w')
                 logger.info(f"Saved initial pairs and structures to {base_data_hdf5_path}")
@@ -143,10 +149,11 @@ def run_analysis_workflow():
 
 
 if __name__ == "__main__":
-    # Setup logging first based on global script variables
+
+    os.makedirs(FILE_DIRPATH, exist_ok=True)  # Ensure dir exists for log file
+
     log_file_full_path = None
     if LOG_FILE_NAME:
-        os.makedirs(FILE_DIRPATH, exist_ok=True)  # Ensure dir exists for log file
         log_file_full_path = os.path.join(FILE_DIRPATH, LOG_FILE_NAME)
 
     setup_logging(level=getattr(logging, LOG_LEVEL.upper()), log_file=log_file_full_path)

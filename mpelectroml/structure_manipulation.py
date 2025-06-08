@@ -1,4 +1,3 @@
-# mpelectroml/structure_manipulation.py
 import numpy as np
 import pandas as pd
 from pymatgen.core import Structure, Element, Composition

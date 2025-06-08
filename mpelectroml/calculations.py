@@ -1,4 +1,3 @@
-# mpelectroml/calculations.py
 import numpy as np
 import pandas as pd
 from ase import Atoms
@@ -8,6 +7,7 @@ from fairchem.core import pretrained_mlip, FAIRChemCalculator
 from pymatgen.core import Structure
 import logging
 import os
+from mpelectroml.utils import HDF5_KEY_WITH_ENERGIES
 
 logger = logging.getLogger(__name__)
 _PREDICTOR = None
@@ -179,7 +179,6 @@ def add_energy_forces_to_df(
     os.makedirs(file_dirpath, exist_ok=True)
     # Output HDF5 file name is based on the original_working_ion of the dataset
     hdf5_output_path = os.path.join(file_dirpath, f"{original_working_ion}_electrode_data_with_energies.h5")
-    hdf5_key = "data_with_energies"
 
     # Determine the prefix and structure column name based on ion_type_to_process
     struct_col_name = ""
@@ -262,15 +261,15 @@ def add_energy_forces_to_df(
             logger.info(f"Processed up to row {i} for '{ion_type_to_process}', saving intermediate results "
                         f"to {hdf5_output_path}...")
             try:
-                df_pairs.to_hdf(hdf5_output_path, key=hdf5_key, mode='w')
+                df_pairs.to_hdf(hdf5_output_path, key=HDF5_KEY_WITH_ENERGIES, mode='w')
                 logger.info("Intermediate DataFrame successfully saved.")
             except Exception as e_hdf_interim:
                 logger.error(f"Error saving intermediate DataFrame to HDF5: {e_hdf_interim}")
 
     logger.info(f"All specified rows ({idx_init} to {idx_final-1}) processed for '{ion_type_to_process}'.")
-    logger.info(f"Saving final DataFrame with energies to HDF5: {hdf5_output_path} (key: {hdf5_key})")
+    logger.info(f"Saving final DataFrame with energies to HDF5: {hdf5_output_path} (key: {HDF5_KEY_WITH_ENERGIES})")
     try:
-        df_pairs.to_hdf(hdf5_output_path, key=hdf5_key, mode='w')
+        df_pairs.to_hdf(hdf5_output_path, key=HDF5_KEY_WITH_ENERGIES, mode='w')
         logger.info("Final DataFrame successfully saved.")
     except Exception as e_hdf_final:
         logger.error(f"Error saving final DataFrame to HDF5: {e_hdf_final}")

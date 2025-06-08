@@ -155,6 +155,48 @@ The pipeline primarily generates HDF5 files in the specified output directory:
 -   `{working_ion}_electrode_data_with_energies.h5`: (Key: defined in `mpelectroml.utils.HDF5_KEY_WITH_ENERGIES`)
     Contains all data from the above file, plus MLIP-calculated initial and relaxed energies/forces for all relevant structures.
 
+### Understanding the `{working_ion}_electrode_data_with_energies.h5` DataFrame
+
+The `{working_ion}_electrode_data_with_energies.h5` file (where `{working_ion}` is the primary ion like "Li", and the HDF5 key is typically `data_with_energies`) stores the main pandas DataFrame resulting from the MPElectroML pipeline. This DataFrame accumulates data from all processing steps and includes the following columns:
+
+**1. Base Electrode Pair Information (from Materials Project):**
+
+* `charge_id`: (Text) The Materials Project ID (e.g., "mp-xxxxx") of the charged electrode material.
+* `discharge_id`: (Text) The Materials Project ID of the discharged electrode material (containing the original `working_ion`).
+
+**2. Original Working Ion Structures and Properties (from Materials Project):**
+
+* `charge_structure`: (Pymatgen `Structure` object) The crystal structure of the charged material, as obtained from Materials Project.
+* `charge_formula`: (Text) The chemical formula of the charged material (e.g., "CoO2").
+* `charge_energy_per_atom`: (Float) The energy per atom (in eV/atom) of the charged material, as reported by Materials Project. **Note:** This is DFT-calculated energy from MP, not from the MLIP.
+* `discharge_structure`: (Pymatgen `Structure` object) The crystal structure of the discharged material (containing the original `working_ion`), as obtained from Materials Project.
+* `discharge_formula`: (Text) The chemical formula of the discharged material (e.g., "LiCoO2").
+* `discharge_energy_per_atom`: (Float) The energy per atom (in eV/atom) of the discharged material, as reported by Materials Project. **Note:** This is DFT-calculated energy from MP, not from the MLIP.
+
+**3. Generated Structures for New Working Ions:**
+
+For each `new_working_ion` (e.g., "Na", "K") specified in the workflow, columns are generated:
+* `{new_working_ion}_discharge_structure`: (Pymatgen `Structure` object) The crystal structure of the discharged host material after substituting the original `working_ion` with the `new_working_ion`. For example, `Na_discharge_structure`.
+* `{new_working_ion}_discharge_formula`: (Text) The chemical formula corresponding to the `{new_working_ion}_discharge_structure`. For example, `Na_discharge_formula`.
+
+**4. MLIP-Calculated Properties:**
+
+For each type of structure processed by the MLIP calculations (e.g., "charge", "discharge", and each "new\_working\_ion\_discharge" like "Na\_discharge"), a set of columns is added with a corresponding prefix. Let `{prefix}` represent these identifiers (e.g., `charge`, `discharge`, `Na_discharge`).
+
+* `{prefix}_init_energy_per_atom`: (Float) The potential energy per atom (in eV/atom) of the *initial* (unrelaxed by MLIP) `{prefix}_structure`, as calculated by the FAIRChem MLIP.
+* `{prefix}_init_forces`: (NumPy array object) An array where each row contains the [fx, fy, fz] force components (in eV/Å) acting on each atom in the *initial* `{prefix}_structure`, calculated by the MLIP.
+* `{prefix}_relaxed_structure`: (Pymatgen `Structure` object) The crystal structure obtained after performing structural relaxation (positions and cell) on the `{prefix}_structure` using the FAIRChem MLIP.
+* `{prefix}_relaxed_energy_per_atom`: (Float) The potential energy per atom (in eV/atom) of the *MLIP-relaxed* `{prefix}_structure`.
+* `{prefix}_relaxed_forces`: (NumPy array object) An array of atomic forces (in eV/Å) for the *MLIP-relaxed* `{prefix}_structure`. If relaxation converged well, these forces should be close to zero.
+
+**Example Column Names for MLIP Data (if `WORKING_ION="Li"` and `NEW_WORKING_IONS=["Na"]`):**
+
+* For the original charged structure: `charge_init_energy_per_atom`, `charge_relaxed_structure`, etc.
+* For the original discharged structure (e.g., lithiated): `discharge_init_energy_per_atom`, `discharge_relaxed_structure`, etc.
+* For the new ion discharged structure (e.g., sodiated): `Na_discharge_init_energy_per_atom`, `Na_discharge_relaxed_structure`, etc.
+
+This comprehensive DataFrame allows for direct comparison of MP-DFT energies with MLIP-calculated energies, analysis of structural changes upon relaxation with the MLIP, and evaluation of different working ions.
+
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details. TODO: Update if you choose a different license.

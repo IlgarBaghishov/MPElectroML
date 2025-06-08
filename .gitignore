@@ -127,9 +127,15 @@ examples/Na
 *.h5
 *.hdf5
 mpelectroml_output/
+examples/MPTrj.json
+examples/MPTrj_2022.9_full.json
+examples/get_data_test.py
 
 # Miscellaneous
 **/\$SCRATCH/
+**ll_out
+**run.sh
+**_temp*
 
 # FAIRChem model cache (example, actual path might vary if downloaded locally)
 # Consider adding if models are downloaded into the project directory by mistake
