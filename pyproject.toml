@@ -34,6 +34,7 @@ dependencies = [
     "ase >= 3.25",
     "pymatgen >= 2024.8", # Check for recent stable versions
     "mp-api >= 0.45",   # Check for recent stable versions of Materials Project API client
+    "chgnet >= 0.4.0",
     "fairchem-core >= 2.1",    # Or the specific Fairchem package name if different
     "tables",           # For HDF5 support in pandas (df.to_hdf, pd.read_hdf with 'table' format)
 ]

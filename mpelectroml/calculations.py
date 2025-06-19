@@ -135,27 +135,31 @@ def calculate_energy_and_forces_from_Structure(
                     final_structure_pmg = Structure.from_ase_atoms(atoms)
 
         elif model_name.lower() == "chgnet":
-            global _CHGNET_PREDICTOR, _CHGNET_RELAXER
-            if _CHGNET_PREDICTOR is None:
-                logger.info("Initializing CHGNet predictor...")
-                _CHGNET_PREDICTOR = CHGNet.load(use_device='cpu')
-                logger.info("CHGNet predictor initialized successfully.")
+            try:
+                global _CHGNET_PREDICTOR, _CHGNET_RELAXER
+                if _CHGNET_PREDICTOR is None:
+                    logger.info("Initializing CHGNet predictor...")
+                    _CHGNET_PREDICTOR = CHGNet.load()
+                    logger.info("CHGNet predictor initialized successfully.")
 
-            if relax:
-                if _CHGNET_RELAXER is None:
-                    logger.info("Initializing CHGNet structure relaxer...")
-                    _CHGNET_RELAXER = StructOptimizer(use_device='cpu')
-                    logger.info("CHGNet relaxer initialized successfully.")
+                if relax:
+                    if _CHGNET_RELAXER is None:
+                        logger.info("Initializing CHGNet structure relaxer...")
+                        _CHGNET_RELAXER = StructOptimizer()
+                        logger.info("CHGNet relaxer initialized successfully.")
 
-                # CHGNet relaxer takes different parameters
-                result = _CHGNET_RELAXER.relax(structure_pmg, fmax=relax_fmax, steps=relax_steps)
-                final_structure_pmg = result["final_structure"]
+                    # CHGNet relaxer takes different parameters
+                    result = _CHGNET_RELAXER.relax(structure_pmg, fmax=relax_fmax, steps=relax_steps)
+                    final_structure_pmg = result["final_structure"]
 
-            # For both relaxed and unrelaxed cases, predict properties on the final structure
-            prediction = _CHGNET_PREDICTOR.predict_structure(final_structure_pmg)
-            energy_per_atom = prediction['e'].item()  # / len(final_structure_pmg) # CHGNet gives total energy
-            forces = prediction['f'].numpy()
+                # For both relaxed and unrelaxed cases, predict properties on the final structure
+                prediction = _CHGNET_PREDICTOR.predict_structure(final_structure_pmg)
+                energy_per_atom = prediction['e'].item()  # / len(final_structure_pmg) # CHGNet gives total energy
+                forces = prediction['f']
 
+            finally:
+                if hasattr(final_structure_pmg, 'calc'):
+                    final_structure_pmg.calc = None
         else:
             logger.error(f"Unknown model_name: '{model_name}'. Please use 'uma' or 'chgnet'.")
             return [structure_pmg, None, None]

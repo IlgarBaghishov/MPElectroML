@@ -121,12 +121,13 @@ cython_debug/
 Thumbs.db
 
 # Data output files (example, adjust if you want to track specific outputs)
-examples/ll_out
 examples/Na
+examples/Li
+examples/Na_chgnet
+examples/Li_chgnet
 *.log
 *.h5
 *.hdf5
-mpelectroml_output/
 examples/MPTrj.json
 examples/MPTrj_2022.9_full.json
 examples/get_data_test.py
