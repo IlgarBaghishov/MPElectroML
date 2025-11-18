@@ -32,13 +32,14 @@ def assign_calculator(atoms: Atoms | None) -> Atoms | None:
     try:
         # Using "uma-sm". Users can check `fairchem.core.pretrained_mlip.available_models` for other options.
         # Device can be "cuda" or "cpu" depending on if a GPU is available and PyTorch is CUDA-enabled.
-        model_name = "uma-sm"
+        model_name = "uma-m-1p1"
         device = "cuda"
         global _FAIRCHEM_PREDICTOR
         if _FAIRCHEM_PREDICTOR is None:
             logger.info(f"Initializing FAIRChem predictor: {model_name} on {device}...")
             try:
-                _FAIRCHEM_PREDICTOR = pretrained_mlip.get_predict_unit(model_name, device=device)
+                _FAIRCHEM_PREDICTOR = pretrained_mlip.get_predict_unit(model_name, device=device,
+                                                                       cache_dir="/scratch/08405/ilgar/.cache/farichem")
                 logger.info("FAIRChem predictor initialized successfully.")
             except Exception as e:
                 logger.error(f"Failed to initialize FAIRChem predictor ('{model_name}'): {e}")

@@ -33,13 +33,14 @@ def get_electrode_pairs(working_ion: str, api_key: str | None, fields: list) -> 
             logger.info(f"Retrieved {len(electrode_docs)} initial insertion electrode entries from MP.")
 
             for doc in electrode_docs:
-                if doc.id_charge and doc.id_discharge:  # Ensure both IDs are present
+                if (doc.id_charge and doc.id_discharge) and doc.working_ion:  # Ensure both IDs are present
                     found_pairs_data.append({
                         "charge_id": doc.id_charge,
-                        "discharge_id": doc.id_discharge
+                        "discharge_id": doc.id_discharge,
+                        "working_ion": doc.working_ion
                     })
                 else:
-                    logger.debug(f"Skipping entry due to missing charge/discharge ID: {doc}")
+                    logger.debug(f"Skipping entry due to missing charge/discharge ID or working_ion: {doc}")
 
         if found_pairs_data:
             df_found_pairs = pd.DataFrame(found_pairs_data)
@@ -81,14 +82,16 @@ def get_structures_from_electrode_pair_ids(df_pairs: pd.DataFrame, api_key: str 
         return
 
     logger.info(f"Retrieving structures for {len(all_unique_ids)} unique material IDs...")
-
+    BATCH_SIZE = 5000
     material_docs_map = {}
     try:
         with MPRester(api_key=api_key) as mpr:
-            retrieved_docs = mpr.materials.summary.search(material_ids=all_unique_ids, fields=fields)
+            for i in range(0, len(all_unique_ids), BATCH_SIZE):
+                batch_ids = all_unique_ids[i:i + BATCH_SIZE]
+                retrieved_docs = mpr.materials.summary.search(material_ids=batch_ids, fields=fields)
 
-            for doc in retrieved_docs:
-                material_docs_map[doc.material_id] = doc
+                for doc in retrieved_docs:
+                    material_docs_map[doc.material_id] = doc
             logger.info(f"Retrieved data for {len(material_docs_map)} out of {len(all_unique_ids)} "
                         "requested material IDs.")
 

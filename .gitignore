@@ -134,7 +134,7 @@ examples/get_data_test.py
 
 # Miscellaneous
 **/\$SCRATCH/
-**ll_out
+**ll_out*
 **run.sh
 **_temp*
 
@@ -142,3 +142,11 @@ examples/get_data_test.py
 # Consider adding if models are downloaded into the project directory by mistake
 # .fairchem_models/
 # ~/.cache/torch/fairchem* # This is a user-level cache, usually not in project
+
+
+# !examples/Na_electrodes_uma_m/Na_electrode_data_with_energies.h5
+# !examples/Li_electrodes_uma_m/Li_electrode_data_with_energies.h5
+# !examples/Li_Na_electrodes_uma_m/_electrode_data_with_energies.h5
+!examples/combine_Li_Na copy.ipynb
+!examples/Li_Na_electrodes_uma_m/final_dataset.h5
+examples/Li_Na_electrodes_uma_m/*.png

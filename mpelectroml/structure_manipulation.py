@@ -72,6 +72,7 @@ def create_new_working_ion_discharge_structures(
     match_stats = {"unmatched_complex": 0, "original_ion_in_charge_host": 0, "processed_rows": 0}
 
     for i in range(df_pairs.shape[0]):
+        original_working_ion_i = str(df_pairs.at[i, 'working_ion']) if original_working_ion == '' else original_working_ion
         match_stats["processed_rows"] += 1
         charge_struct_pmg = df_pairs.at[i, 'charge_structure']
         discharge_struct_pmg = df_pairs.at[i, 'discharge_structure']
@@ -86,18 +87,18 @@ def create_new_working_ion_discharge_structures(
         discharge_struct_pmg_copy = discharge_struct_pmg.copy()
         new_discharge_structure = discharge_struct_pmg.copy()
 
-        if original_working_ion in Composition(charge_struct_pmg.formula).get_el_amt_dict():
+        if original_working_ion_i in Composition(charge_struct_pmg.formula).get_el_amt_dict():
             match_stats["original_ion_in_charge_host"] += 1
 
             # Create host frameworks by removing the original working ion
             charge_host = charge_struct_pmg_copy.copy()
-            charge_host.remove_species([original_working_ion])
+            charge_host.remove_species([original_working_ion_i])
 
             discharge_host = discharge_struct_pmg_copy.copy()
-            discharge_host.remove_species([original_working_ion])
+            discharge_host.remove_species([original_working_ion_i])
 
             if charge_host.composition.formula != discharge_host.composition.formula:
-                logger.debug(f"Row {i}: Host formulas differ for {original_working_ion} removal. "
+                logger.debug(f"Row {i}: Host formulas differ for {original_working_ion_i} removal. "
                              f"Charge host: {charge_host.composition.formula}, "
                              f"Discharge host: {discharge_host.composition.formula}. Attempting supercell matching.")
 
@@ -149,27 +150,27 @@ def create_new_working_ion_discharge_structures(
             new_discharge_structure = discharge_struct_pmg_copy.copy()
 
             if mapping is None:
-                logger.warning(f"Row {i}: Structures do not match after scaling attempt for {original_working_ion}. "
+                logger.warning(f"Row {i}: Structures do not match after scaling attempt for {original_working_ion_i}. "
                                "No replacement will be made.")
                 match_stats["unmatched_complex"] += 1
                 new_discharge_structure = None
             else:
                 for j, site in enumerate(new_discharge_structure):
                     if j not in mapping:
-                        if Element(original_working_ion) in site:
+                        if Element(original_working_ion_i) in site:
                             new_discharge_structure.replace(j, new_working_ion)
                         else:
                             logger.warning(f"Row {i}: Site {j} in discharge structure does not match any site in "
-                                           f"charge structure and it is not {original_working_ion} but "
+                                           f"charge structure and it is not {original_working_ion_i} but "
                                            f"{site.species_string}.")
         else:
-            logger.debug(f"Row {i}: '{original_working_ion}' not in charge formula. Attempting simple replacement in "
+            logger.debug(f"Row {i}: '{original_working_ion_i}' not in charge formula. Attempting simple replacement in "
                          f"discharge structure for '{new_working_ion}'.")
-            if original_working_ion in Composition(new_discharge_structure.formula).get_el_amt_dict():
-                new_discharge_structure.replace_species({original_working_ion: new_working_ion})
+            if original_working_ion_i in Composition(new_discharge_structure.formula).get_el_amt_dict():
+                new_discharge_structure.replace_species({original_working_ion_i: new_working_ion})
                 new_discharge_structure = new_discharge_structure
             else:
-                logger.warning(f"Row {i}: Simple replacement: '{original_working_ion}' not found in discharge formula "
+                logger.warning(f"Row {i}: Simple replacement: '{original_working_ion_i}' not found in discharge formula "
                                f"'{new_discharge_structure.formula}'. Cannot create '{new_working_ion}' variant. "
                                "Structure set to None.")
                 new_discharge_structure = None
