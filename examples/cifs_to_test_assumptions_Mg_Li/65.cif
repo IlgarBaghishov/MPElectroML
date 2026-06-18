@@ -1,0 +1,37 @@
+# generated using pymatgen
+data_MgFeAs2O7
+_symmetry_space_group_name_H-M   'P 1'
+_cell_length_a   5.66189525
+_cell_length_b   5.66155096
+_cell_length_c   5.39309078
+_cell_angle_alpha   79.34368982
+_cell_angle_beta   100.64124449
+_cell_angle_gamma   82.35666202
+_symmetry_Int_Tables_number   1
+_chemical_formula_structural   MgFeAs2O7
+_chemical_formula_sum   'Mg1 Fe1 As2 O7'
+_cell_volume   164.45349693
+_cell_formula_units_Z   1
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Mg  Mg0  1  0.13188414  0.13191786  0.49998525  1
+  Fe  Fe1  1  0.09649585  0.09652264  0.00000483  1
+  As  As2  1  0.64391280  0.28329911  0.40312121  1
+  As  As3  1  0.28333226  0.64391345  0.59688051  1
+  O  O4  1  0.82559529  0.09131385  0.67637810  1
+  O  O5  1  0.84056563  0.32094903  0.19993775  1
+  O  O6  1  0.37732086  0.19511850  0.28315768  1
+  O  O7  1  0.09136635  0.82558919  0.32362122  1
+  O  O8  1  0.32092414  0.84054647  0.80003619  1
+  O  O9  1  0.19505270  0.37728581  0.71685996  1
+  O  O10  1  0.56599998  0.56599309  0.50001831  1

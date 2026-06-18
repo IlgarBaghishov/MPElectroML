@@ -1,0 +1,46 @@
+# generated using pymatgen
+data_La3MgTi3CrO12
+_symmetry_space_group_name_H-M   'P 1'
+_cell_length_a   5.49468549
+_cell_length_b   5.53408157
+_cell_length_c   7.91246671
+_cell_angle_alpha   90.19613326
+_cell_angle_beta   89.93654204
+_cell_angle_gamma   89.72140482
+_symmetry_Int_Tables_number   1
+_chemical_formula_structural   La3MgTi3CrO12
+_chemical_formula_sum   'La3 Mg1 Ti3 Cr1 O12'
+_cell_volume   240.59817979
+_cell_formula_units_Z   1
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  La  La0  1  0.49731125  0.54227907  0.25056657  1
+  La  La1  1  0.50947670  0.46138092  0.74808014  1
+  La  La2  1  0.99498475  0.96521886  0.74959437  1
+  Mg  Mg3  1  0.99201177  0.02442204  0.25644539  1
+  Ti  Ti4  1  0.99920194  0.49801729  0.00587759  1
+  Ti  Ti5  1  0.00115090  0.49444865  0.49091824  1
+  Ti  Ti6  1  0.49859577  0.00406218  0.00762134  1
+  Cr  Cr7  1  0.50076445  0.00158971  0.49323158  1
+  O  O8  1  0.94230985  0.43040659  0.25129801  1
+  O  O9  1  0.18926585  0.81326167  0.06073843  1
+  O  O10  1  0.18846728  0.80891222  0.43610868  1
+  O  O11  1  0.30302796  0.30467734  0.02359285  1
+  O  O12  1  0.30551074  0.30668900  0.47478730  1
+  O  O13  1  0.61427291  0.99391165  0.24996913  1
+  O  O14  1  0.42631046  0.99382026  0.74930297  1
+  O  O15  1  0.70340706  0.70238402  0.52731264  1
+  O  O16  1  0.70091235  0.70785526  0.97284537  1
+  O  O17  1  0.79129300  0.21241239  0.54987546  1
+  O  O18  1  0.78535953  0.21646890  0.95320571  1
+  O  O19  1  0.06642750  0.52825000  0.74862623  1

@@ -1,0 +1,37 @@
+# generated using pymatgen
+data_LiFeAs2O7
+_symmetry_space_group_name_H-M   'P 1'
+_cell_length_a   5.40710401
+_cell_length_b   5.40710402
+_cell_length_c   4.82977467
+_cell_angle_alpha   81.28254213
+_cell_angle_beta   81.28254212
+_cell_angle_gamma   102.25558284
+_symmetry_Int_Tables_number   1
+_chemical_formula_structural   LiFeAs2O7
+_chemical_formula_sum   'Li1 Fe1 As2 O7'
+_cell_volume   133.90461527
+_cell_formula_units_Z   1
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Li  Li0  1  0.37880717  0.62119284  -0.00000000  1
+  Fe  Fe1  1  1.00059278  -0.00059273  -0.00000003  1
+  As  As2  1  0.44628657  0.11828583  0.40841171  1
+  As  As3  1  0.88171417  0.55371337  0.59158829  1
+  O  O4  1  0.26822359  0.23124468  0.17504943  1
+  O  O5  1  0.76875531  0.73177644  0.82495059  1
+  O  O6  1  0.67473444  0.98437391  0.25559409  1
+  O  O7  1  0.01562610  0.32526556  0.74440592  1
+  O  O8  1  0.28997835  0.92187323  0.72688218  1
+  O  O9  1  0.07812677  0.71002164  0.27311784  1
+  O  O10  1  0.58185575  0.41814424  0.49999998  1

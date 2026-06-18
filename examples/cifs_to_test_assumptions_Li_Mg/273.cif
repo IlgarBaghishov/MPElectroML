@@ -1,0 +1,49 @@
+# generated using pymatgen
+data_K2BaLiCo(NO2)6
+_symmetry_space_group_name_H-M   'P 1'
+_cell_length_a   7.75567520
+_cell_length_b   7.94788203
+_cell_length_c   7.85926445
+_cell_angle_alpha   122.92260631
+_cell_angle_beta   118.06766168
+_cell_angle_gamma   88.91808866
+_symmetry_Int_Tables_number   1
+_chemical_formula_structural   K2BaLiCo(NO2)6
+_chemical_formula_sum   'K2 Ba1 Li1 Co1 N6 O12'
+_cell_volume   339.98860550
+_cell_formula_units_Z   1
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  K  K0  1  0.19252673  0.71360090  0.49353814  1
+  K  K1  1  0.77043555  0.31780837  0.49009209  1
+  Ba  Ba2  1  0.49989357  0.48986466  0.98487124  1
+  Li  Li3  1  0.57613520  0.92109822  0.48446725  1
+  Co  Co4  1  0.00692469  0.99945921  1.00107292  1
+  N  N5  1  0.19851114  0.81203512  1.00312373  1
+  N  N6  1  0.81383622  0.18480748  0.99470134  1
+  N  N7  1  0.19163347  0.19917961  0.38359793  1
+  N  N8  1  0.82112351  0.79150668  0.61073755  1
+  N  N9  1  0.19488016  0.18739177  0.00068996  1
+  N  N10  1  0.81794483  0.81615174  0.00511962  1
+  O  O11  1  0.66294841  0.15176329  0.80069627  1
+  O  O12  1  0.84277403  0.34868208  0.18915217  1
+  O  O13  1  0.17298185  0.64976617  0.81043182  1
+  O  O14  1  0.34819779  0.84911178  0.19913647  1
+  O  O15  1  0.33350107  0.13152732  0.95833932  1
+  O  O16  1  0.63158514  0.68118773  0.50357759  1
+  O  O17  1  0.83433458  0.63912779  0.96179283  1
+  O  O18  1  0.68325487  0.87510195  0.05131813  1
+  O  O19  1  0.83317722  0.85984747  0.49681196  1
+  O  O20  1  0.36230392  0.34006017  0.50348324  1
+  O  O21  1  0.14752886  0.17623827  0.50800053  1
+  O  O22  1  0.17964018  0.36468627  0.04858096  1

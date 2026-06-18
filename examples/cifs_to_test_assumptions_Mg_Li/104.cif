@@ -1,0 +1,35 @@
+# generated using pymatgen
+data_MgNb2(O2F)2
+_symmetry_space_group_name_H-M   'P 1'
+_cell_length_a   5.55805170
+_cell_length_b   5.71553852
+_cell_length_c   5.55805148
+_cell_angle_alpha   59.47192243
+_cell_angle_beta   56.97900182
+_cell_angle_gamma   59.47192345
+_symmetry_Int_Tables_number   1
+_chemical_formula_structural   MgNb2(O2F)2
+_chemical_formula_sum   'Mg1 Nb2 O4 F2'
+_cell_volume   120.81472730
+_cell_formula_units_Z   1
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Mg  Mg0  1  0.66739548  0.74999994  0.83260454  1
+  Nb  Nb1  1  0.98505099  0.00716597  0.00240869  1
+  Nb  Nb2  1  0.49759123  0.49283401  0.51494908  1
+  O  O3  1  0.35134081  0.16244975  0.77643378  1
+  O  O4  1  0.72356622  0.33755029  0.14865917  1
+  O  O5  1  0.35298685  0.70498624  0.77677454  1
+  O  O6  1  0.72322546  0.79501378  0.14701321  1
+  F  F7  1  0.04945979  0.75000003  0.45054023  1
+  F  F8  1  0.89938317  0.25000001  0.60061679  1

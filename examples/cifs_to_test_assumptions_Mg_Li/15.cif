@@ -1,0 +1,30 @@
+# generated using pymatgen
+data_MgTiO2
+_symmetry_space_group_name_H-M   'P 1'
+_cell_length_a   7.38451235
+_cell_length_b   7.38451402
+_cell_length_c   7.38451387
+_cell_angle_alpha   23.45719840
+_cell_angle_beta   23.45719995
+_cell_angle_gamma   23.45720034
+_symmetry_Int_Tables_number   1
+_chemical_formula_structural   MgTiO2
+_chemical_formula_sum   'Mg1 Ti1 O2'
+_cell_volume   56.03028642
+_cell_formula_units_Z   1
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Mg  Mg0  1  0.83291667  0.83291666  0.83291666  1
+  Ti  Ti1  1  0.00012654  0.00012655  0.00012656  1
+  O  O2  1  0.61857292  0.61857309  0.61857309  1
+  O  O3  1  0.38171688  0.38171670  0.38171668  1

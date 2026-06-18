@@ -1,0 +1,40 @@
+# generated using pymatgen
+data_LiVCuO4
+_symmetry_space_group_name_H-M   'P 1'
+_cell_length_a   6.19661514
+_cell_length_b   5.75810161
+_cell_length_c   5.99812868
+_cell_angle_alpha   118.68484448
+_cell_angle_beta   121.10082706
+_cell_angle_gamma   90.00000190
+_symmetry_Int_Tables_number   1
+_chemical_formula_structural   LiVCuO4
+_chemical_formula_sum   'Li2 V2 Cu2 O8'
+_cell_volume   151.75478495
+_cell_formula_units_Z   2
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Li  Li0  1  0.50000004  0.50139204  0.50000012  1
+  Li  Li1  1  -0.00000011  0.49860816  0.49999993  1
+  V  V2  1  0.54527171  0.79527213  0.09054383  1
+  V  V3  1  0.45472901  0.20472789  0.90945650  1
+  Cu  Cu4  1  -0.00053079  0.49999976  -0.00000004  1
+  Cu  Cu5  1  0.00053108  -0.00000076  -0.00000000  1
+  O  O6  1  0.66012710  0.66383184  0.32156033  1
+  O  O7  1  0.33856596  0.33616847  0.67844025  1
+  O  O8  1  0.33987290  0.84227153  0.67843951  1
+  O  O9  1  0.66143403  0.15772797  0.32155961  1
+  O  O10  1  0.22406930  0.26959870  0.03890682  1
+  O  O11  1  0.18516296  0.73040165  0.96109291  1
+  O  O12  1  0.77593049  0.73069224  0.96109310  1
+  O  O13  1  0.81483628  0.26930843  0.03890713  1

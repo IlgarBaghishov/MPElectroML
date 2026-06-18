@@ -1,0 +1,52 @@
+# generated using pymatgen
+data_Na2LiCuPCO7
+_symmetry_space_group_name_H-M   'P 1'
+_cell_length_a   6.63016173
+_cell_length_b   5.10005824
+_cell_length_c   8.97391965
+_cell_angle_alpha   91.88253985
+_cell_angle_beta   90.00000027
+_cell_angle_gamma   89.99999930
+_symmetry_Int_Tables_number   1
+_chemical_formula_structural   Na2LiCuPCO7
+_chemical_formula_sum   'Na4 Li2 Cu2 P2 C2 O14'
+_cell_volume   303.28223366
+_cell_formula_units_Z   2
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Na  Na0  1  0.00659125  0.76667722  0.74663372  1
+  Na  Na1  1  0.49359255  0.76681796  0.74708521  1
+  Na  Na2  1  0.50659122  0.23332284  0.25336617  1
+  Na  Na3  1  0.99359245  0.23318213  0.25291459  1
+  Li  Li4  1  0.75027402  0.23965111  0.88084913  1
+  Li  Li5  1  0.25027398  0.76034926  0.11915130  1
+  Cu  Cu6  1  0.25002023  0.23754075  0.64218398  1
+  Cu  Cu7  1  0.75002022  0.76245939  0.35781520  1
+  P  P8  1  0.74999666  0.33665547  0.58459424  1
+  P  P9  1  0.24999661  0.66334465  0.41540044  1
+  C  C10  1  0.24988804  0.25401421  0.95861825  1
+  C  C11  1  0.74988802  0.74596834  0.04139446  1
+  O  O12  1  0.75009526  0.85924446  0.91385265  1
+  O  O13  1  0.24986293  0.09536987  0.83993463  1
+  O  O14  1  0.24973137  0.50440608  0.94715531  1
+  O  O15  1  0.93524294  0.27531341  0.68679728  1
+  O  O16  1  0.56469150  0.27455655  0.68653798  1
+  O  O17  1  0.24984467  0.81126770  0.56660975  1
+  O  O18  1  0.75016883  0.64015837  0.55901719  1
+  O  O19  1  0.25016882  0.35984026  0.44098373  1
+  O  O20  1  0.74984466  0.18873445  0.43339296  1
+  O  O21  1  0.43524157  0.72468603  0.31320404  1
+  O  O22  1  0.06469273  0.72544292  0.31346328  1
+  O  O23  1  0.74973131  0.49560348  0.05284277  1
+  O  O24  1  0.74986293  0.90462971  0.16006339  1
+  O  O25  1  0.25009517  0.14076379  0.08613841  1

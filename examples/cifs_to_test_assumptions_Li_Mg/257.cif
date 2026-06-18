@@ -1,0 +1,51 @@
+# generated using pymatgen
+data_LiAu4Se4(ClO3)4
+_symmetry_space_group_name_H-M   'P 1'
+_cell_length_a   4.63499506
+_cell_length_b   10.17200846
+_cell_length_c   11.08564244
+_cell_angle_alpha   82.86228001
+_cell_angle_beta   86.04194636
+_cell_angle_gamma   85.04710786
+_symmetry_Int_Tables_number   1
+_chemical_formula_structural   LiAu4Se4(ClO3)4
+_chemical_formula_sum   'Li1 Au4 Se4 Cl4 O12'
+_cell_volume   515.77097204
+_cell_formula_units_Z   1
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Li  Li0  1  0.25623867  0.07629622  0.21823808  1
+  Au  Au1  1  0.01624703  0.58837735  0.17137467  1
+  Au  Au2  1  0.95901177  0.00065574  0.00496927  1
+  Au  Au3  1  0.01219983  0.42179369  0.81115989  1
+  Au  Au4  1  0.03607416  0.99387076  0.50717795  1
+  Se  Se5  1  0.74498556  0.86093943  0.28667608  1
+  Se  Se6  1  0.17826013  0.71394084  0.89543078  1
+  Se  Se7  1  0.79562489  0.31098260  0.09346407  1
+  Se  Se8  1  0.29294164  0.12797145  0.73549737  1
+  Cl  Cl9  1  0.34834581  0.49059088  0.66260978  1
+  Cl  Cl10  1  0.68601474  0.52555798  0.32689172  1
+  Cl  Cl11  1  0.31416097  0.16664944  0.42583746  1
+  Cl  Cl12  1  0.76017669  0.81989543  0.57561662  1
+  O  O13  1  0.61885394  0.96203228  0.16124402  1
+  O  O14  1  0.70870832  0.35864208  0.94512797  1
+  O  O15  1  0.04011810  0.77104541  0.22200653  1
+  O  O16  1  0.04246639  0.17036700  0.08688706  1
+  O  O17  1  0.08044148  0.40508663  0.11934067  1
+  O  O18  1  0.89259119  0.82556936  0.93501811  1
+  O  O19  1  0.31326469  0.64464533  0.03490848  1
+  O  O20  1  0.99231629  0.24296453  0.75087620  1
+  O  O21  1  0.97161751  0.97822055  0.33065761  1
+  O  O22  1  0.92619726  0.60199940  0.86907470  1
+  O  O23  1  0.32359303  0.04661661  0.87951222  1
+  O  O24  1  0.09232892  0.00779204  0.68254570  1

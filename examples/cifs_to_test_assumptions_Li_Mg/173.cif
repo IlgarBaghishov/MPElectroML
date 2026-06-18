@@ -1,0 +1,40 @@
+# generated using pymatgen
+data_Li2Co3TeO8
+_symmetry_space_group_name_H-M   'P 1'
+_cell_length_a   6.03461883
+_cell_length_b   6.03442058
+_cell_length_c   6.08814637
+_cell_angle_alpha   58.49736257
+_cell_angle_beta   58.49618248
+_cell_angle_gamma   58.06574322
+_symmetry_Int_Tables_number   1
+_chemical_formula_structural   Li2Co3TeO8
+_chemical_formula_sum   'Li2 Co3 Te1 O8'
+_cell_volume   150.85039291
+_cell_formula_units_Z   1
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Li  Li0  1  0.87123423  0.87204418  0.85123551  1
+  Li  Li1  1  0.12802886  0.12869848  0.14876169  1
+  Co  Co2  1  0.50238308  -0.00084694  0.49868795  1
+  Co  Co3  1  0.49810872  0.50188764  -0.00000062  1
+  Co  Co4  1  0.00085100  0.49762140  0.50130688  1
+  Te  Te5  1  0.49962417  0.50037650  0.50000154  1
+  O  O6  1  0.74319799  0.74166789  0.70373716  1
+  O  O7  1  0.28021901  0.74116727  0.72209223  1
+  O  O8  1  0.73276369  0.73215340  0.27107738  1
+  O  O9  1  0.73930217  0.28072490  0.72345701  1
+  O  O10  1  0.25877503  0.71971641  0.27797836  1
+  O  O11  1  0.26772388  0.26735716  0.72891906  1
+  O  O12  1  0.71933703  0.26074244  0.27649644  1
+  O  O13  1  0.25845106  0.25668927  0.29624949  1

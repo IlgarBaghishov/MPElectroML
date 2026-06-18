@@ -1,0 +1,36 @@
+# generated using pymatgen
+data_NaLi2CrF6
+_symmetry_space_group_name_H-M   'P 1'
+_cell_length_a   5.78915677
+_cell_length_b   5.78915667
+_cell_length_c   5.78915652
+_cell_angle_alpha   60.00000078
+_cell_angle_beta   60.00000247
+_cell_angle_gamma   60.00000230
+_symmetry_Int_Tables_number   1
+_chemical_formula_structural   NaLi2CrF6
+_chemical_formula_sum   'Na1 Li2 Cr1 F6'
+_cell_volume   137.19267537
+_cell_formula_units_Z   1
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Na  Na0  1  0.49999983  0.49999987  0.50000018  1
+  Li  Li1  1  0.25000003  0.24999994  0.24999999  1
+  Li  Li2  1  0.74999998  0.75000007  0.75000001  1
+  Cr  Cr3  1  0.00000081  0.00000009  -0.00000024  1
+  F  F4  1  0.23563712  0.76436275  0.23563727  1
+  F  F5  1  0.76436254  0.76436249  0.23563749  1
+  F  F6  1  0.76436256  0.23563748  0.76436254  1
+  F  F7  1  0.76436250  0.23563749  0.23563753  1
+  F  F8  1  0.23563741  0.76436260  0.76436254  1
+  F  F9  1  0.23563721  0.23563724  0.76436268  1

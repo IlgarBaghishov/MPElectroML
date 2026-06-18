@@ -1,0 +1,41 @@
+# generated using pymatgen
+data_MgCo2P2(O4F)2
+_symmetry_space_group_name_H-M   'P 1'
+_cell_length_a   5.38623747
+_cell_length_b   5.15252233
+_cell_length_c   7.34036373
+_cell_angle_alpha   107.90333757
+_cell_angle_beta   110.91729282
+_cell_angle_gamma   91.99870619
+_symmetry_Int_Tables_number   1
+_chemical_formula_structural   MgCo2P2(O4F)2
+_chemical_formula_sum   'Mg1 Co2 P2 O8 F2'
+_cell_volume   178.66193207
+_cell_formula_units_Z   1
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Mg  Mg0  1  0.99782001  0.50079710  0.49761629  1
+  Co  Co1  1  0.99776696  0.00195527  0.99732739  1
+  Co  Co2  1  0.49769383  0.50318734  0.49654730  1
+  P  P3  1  0.40775194  0.11351791  0.75300628  1
+  P  P4  1  0.58812233  0.89014264  0.24070246  1
+  O  O5  1  0.27786697  0.83872098  0.13602070  1
+  O  O6  1  0.73619304  0.84234346  0.09497777  1
+  O  O7  1  0.68268209  0.19238729  0.40365892  1
+  O  O8  1  0.66683811  0.68279351  0.36327065  1
+  O  O9  1  0.26060900  0.15952254  0.89925715  1
+  O  O10  1  0.31194838  0.81083094  0.59022710  1
+  O  O11  1  0.33020238  0.32104803  0.63084175  1
+  O  O12  1  0.71812642  0.16382489  0.85780837  1
+  F  F13  1  0.12101680  0.35352932  0.26140133  1
+  F  F14  1  0.87411076  0.65039879  0.73269458  1

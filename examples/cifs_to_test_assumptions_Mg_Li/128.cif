@@ -1,0 +1,39 @@
+# generated using pymatgen
+data_MgTiV3O8
+_symmetry_space_group_name_H-M   'P 1'
+_cell_length_a   6.50765467
+_cell_length_b   6.50637020
+_cell_length_c   6.80391684
+_cell_angle_alpha   75.44404319
+_cell_angle_beta   104.54660077
+_cell_angle_gamma   145.08065407
+_symmetry_Int_Tables_number   1
+_chemical_formula_structural   MgTiV3O8
+_chemical_formula_sum   'Mg1 Ti1 V3 O8'
+_cell_volume   159.08447737
+_cell_formula_units_Z   1
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Mg  Mg0  1  0.82395969  0.17523627  0.99016057  1
+  Ti  Ti1  1  0.68880620  0.30961440  0.27897386  1
+  V  V2  1  0.39713857  0.60162673  0.32273424  1
+  V  V3  1  0.59815095  0.40037248  0.68932008  1
+  V  V4  1  0.29248676  0.70712837  0.68142349  1
+  O  O5  1  0.13821795  0.86054553  0.69505419  1
+  O  O6  1  0.23263810  0.76751833  0.35709279  1
+  O  O7  1  0.35555724  0.64350467  0.98017261  1
+  O  O8  1  0.43223281  0.56580051  0.63014398  1
+  O  O9  1  0.56247164  0.43976504  0.37207440  1
+  O  O10  1  0.65257935  0.34531295  0.01146591  1
+  O  O11  1  0.76843731  0.23057084  0.68021822  1
+  O  O12  1  0.85940543  0.14050187  0.29115966  1
