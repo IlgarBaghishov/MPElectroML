@@ -7,8 +7,8 @@
 # to hosts the Materials Project already reports as electrodes.
 #
 # Configuration is the block of module-level constants below (no argparse), matching the
-# other examples. To use several GPUs, submit one process per shard with disjoint
-# IDX_INIT/IDX_FINAL ranges and different OUTPUT_FILENAME values, then concatenate.
+# other examples. To use several GPUs, launch one task per GPU with srun: each task shards
+# the work automatically from SLURM_PROCID/SLURM_NTASKS and writes its own output file.
 import logging
 import os
 import sys
@@ -39,7 +39,13 @@ MP_SEARCH_FILTERS = {"theoretical": False, "energy_above_hull": (0, 0.1)}
 
 SKIP_MP_RETRIEVAL = False   # reuse MATERIALS_HDF5 instead of querying MP
 
-# Shard bounds for this process.
+# Sharding. Under SLURM each task takes a strided slice of the size-sorted frame
+# (rank::ntasks) rather than a contiguous block, so cheap and expensive structures are
+# spread evenly and tasks finish at roughly the same time. Each shard writes its own file.
+SHARD_RANK = int(os.environ.get("SLURM_PROCID", 0))
+SHARD_COUNT = int(os.environ.get("SLURM_NTASKS", 1))
+
+# Optional further bounds applied *within* this shard (for resuming a partial run).
 IDX_INIT = 0
 IDX_FINAL = -1
 CHECKPOINT_EVERY = 100
@@ -93,7 +99,11 @@ def run_analysis_workflow():
     # Cheapest structures first, so that a shard's cost is dominated by the tail rather
     # than by where its boundaries happen to fall.
     df = df.sort_values("num_sites").reset_index(drop=True)
-    logger.info(f"{len(df)} materials to process; shard [{IDX_INIT}, {IDX_FINAL}).")
+    output_filename = OUTPUT_FILENAME
+    if SHARD_COUNT > 1:
+        df = df.iloc[SHARD_RANK::SHARD_COUNT].reset_index(drop=True)
+        output_filename = OUTPUT_FILENAME.replace(".h5", f"_shard{SHARD_RANK}.h5")
+    logger.info(f"shard {SHARD_RANK + 1}/{SHARD_COUNT}: {len(df)} materials -> {output_filename}")
 
     add_intercalation_data_to_df(
         df,
@@ -103,7 +113,7 @@ def run_analysis_workflow():
         idx_init=IDX_INIT,
         idx_final=IDX_FINAL,
         checkpoint_every=CHECKPOINT_EVERY,
-        output_filename=OUTPUT_FILENAME,
+        output_filename=output_filename,
     )
     logger.info("Workflow complete.")
 
