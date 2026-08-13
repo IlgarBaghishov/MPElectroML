@@ -17,6 +17,7 @@ import json
 import logging
 import os
 from dataclasses import dataclass, field
+from typing import NamedTuple
 
 import numpy as np
 import pandas as pd
@@ -29,6 +30,7 @@ from mpelectroml.structure_manipulation import (
     framework_bonds_changed,
     get_interstitial_sites,
     get_inserted_ion_indices,
+    get_symmetry_unique_site_indices,
 )
 from mpelectroml.utils import HDF5_KEY_INTERCALATION
 
@@ -38,9 +40,11 @@ logger = logging.getLogger(__name__)
 # processed, so a resumed run skips it. Every code path ends in one of these, which is
 # what makes resuming safe: a row is either untouched ("") or finished.
 COMPLETED_STATUSES = frozenset({
-    "sodiated", "sodiate_error", "sodiate_not_applicable", "intercalate_error",
+    "sodiated", "sodiate_error", "sodiate_not_applicable",
     "mp_relax_error", "no_voronoi_sites", "no_host", "first_ion_checked", "error",
     "processing_error",
+    # Retained so that runs written before energies were carried forward still resume.
+    "intercalate_error",
 })
 
 
@@ -65,6 +69,10 @@ class IntercalationSettings:
         max_cell_growth: Reject a structure if any cell vector grows by more than this fraction.
         first_ion_energy_cutoff: For hosts that do not already contain the working ion,
             the first insertion must be at least this favourable (eV) to be pursued.
+        symmetry_reduce_host_sites: When rebuilding the host, try one site per
+            symmetry-equivalent class instead of every site. Equivalent sites give the same
+            energy, so this cuts relaxations without changing the outcome. Set False to
+            reproduce the exhaustive scan exactly.
         fmax, steps, optimizer, optimizer_kwargs: Relaxation settings.
         model_name, device, task_name, cache_dir: MLIP settings passed to assign_calculator.
     """
@@ -82,6 +90,7 @@ class IntercalationSettings:
     optimizer: str = "fire"
     optimizer_kwargs: dict = field(default_factory=lambda: {
         "dt": 0.05, "maxstep": 0.1, "dtmax": 0.2, "downhill_check": False})
+    symmetry_reduce_host_sites: bool = True
     model_name: str = "uma-s-1p2"
     device: str = "cuda"
     task_name: str = "omat"
@@ -117,25 +126,56 @@ def _candidate_sites(structure, settings):
     )
 
 
+class HostResult(NamedTuple):
+    """Outcome of building a minimal stable host, including energies to reuse downstream."""
+    host_energy_per_atom: float
+    host_energy: float
+    overall_dE: float
+    data: list
+    energies: list
+    N: int
+    host_json: str | None
+    status: str
+
+
+def _symmetry_reduced_candidates(host, ion_sites, candidate_indices, settings):
+    """One candidate index per symmetry class, falling back to all on any symmetry failure."""
+    if not settings.symmetry_reduce_host_sites or len(candidate_indices) < 2:
+        return candidate_indices
+    try:
+        subset = [ion_sites[index] for index in candidate_indices]
+        keep = get_symmetry_unique_site_indices(host, subset, settings.symprec,
+                                                settings.dedup_distance)
+        return [candidate_indices[k] for k in keep]
+    except Exception as e:
+        logger.info(f"Symmetry reduction unavailable ({type(e).__name__}: {e}); using all sites.")
+        return candidate_indices
+
+
 def screen_first_ion(structure: Structure, settings: IntercalationSettings) -> tuple:
     """
     For a host that does not already contain the working ion, finds the most favourable
     single-ion insertion energy. Used to decide whether the host is worth pursuing.
+
+    The relaxed host and its energy are returned alongside, so the caller does not have to
+    relax the same structure a second time.
 
     Args:
         structure (Structure): Candidate host, as retrieved from MP.
         settings (IntercalationSettings): Run settings.
 
     Returns:
-        tuple: (status, best_dE). Status is "first_ion_checked", "no_voronoi_sites", or
-               "mp_relax_error". best_dE is float("inf") if no candidate relaxed cleanly.
+        tuple: (status, best_dE, host_energy, host_structure). Status is
+               "first_ion_checked", "no_voronoi_sites", or "mp_relax_error". best_dE is
+               float("inf") if no candidate relaxed cleanly; host_structure is None if the
+               host itself did not relax.
     """
     ion = settings.working_ion
     bulk_energy = settings.bulk_energies[ion]
 
     converged, base_energy, relaxed = _relax(structure, settings)
     if not converged:
-        return "mp_relax_error", 0
+        return "mp_relax_error", 0, float("inf"), None
 
     candidate_sites = _candidate_sites(relaxed, settings)
     best_dE = float("inf")
@@ -152,10 +192,10 @@ def screen_first_ion(structure: Structure, settings: IntercalationSettings) -> t
             best_dE = dE
 
     status = "first_ion_checked" if candidate_sites else "no_voronoi_sites"
-    return status, best_dE
+    return status, best_dE, base_energy, relaxed
 
 
-def build_minimal_stable_host(structure: Structure, settings: IntercalationSettings) -> tuple:
+def build_minimal_stable_host(structure: Structure, settings: IntercalationSettings) -> "HostResult":
     """
     Finds the smallest working-ion content at which the framework is still stable.
 
@@ -164,15 +204,17 @@ def build_minimal_stable_host(structure: Structure, settings: IntercalationSetti
     one at a time at whichever original site gives the lowest energy, until the structure
     is stable or every ion has been restored.
 
+    With `settings.symmetry_reduce_host_sites` only one site per symmetry-equivalent class
+    is tried each round. Equivalent sites give the same energy, so the selected minimum is
+    the same while the number of relaxations drops from O(n^2) toward O(n * classes).
+
     Args:
         structure (Structure): The full MP structure (contains the working ion).
         settings (IntercalationSettings): Run settings.
 
     Returns:
-        tuple: (host_energy_per_atom, overall_dE, data, N, host_json, status), where `data`
-               is the trajectory seeded at the full MP composition, `N` is the number of
-               ions between the host and that composition, and status is
-               "host_structure_found", "no_host", or "error".
+        HostResult: energies, the seed trajectory, ion count and status. Status is
+                    "host_structure_found", "no_host", or "error".
     """
     ion = settings.working_ion
     bulk_energy = settings.bulk_energies[ion]
@@ -186,7 +228,7 @@ def build_minimal_stable_host(structure: Structure, settings: IntercalationSetti
     framework.remove_species([ion])
     if len(framework) == 0:
         # Nothing left once the ion is stripped (e.g. elemental Li).
-        return float("inf"), 0, [], 0, None, "no_host"
+        return HostResult(float("inf"), float("inf"), 0, [], [], 0, None, "no_host")
 
     def is_stable(candidate, converged):
         return (converged
@@ -196,12 +238,13 @@ def build_minimal_stable_host(structure: Structure, settings: IntercalationSetti
     converged, host_energy, host = _relax(framework.copy(), settings)
     used = set()   # indices into ion_sites already re-added to the host
     while not is_stable(host, converged) and len(used) < num_ions:
+        candidates = [index for index in range(num_ions) if index not in used]
+        candidates = _symmetry_reduced_candidates(host, ion_sites, candidates, settings)
+
         best_energy, best_structure, best_index = float("inf"), None, None
-        for index, frac in enumerate(ion_sites):
-            if index in used:   # this original site already holds a re-added ion
-                continue
+        for index in candidates:
             candidate = host.copy()
-            candidate.append(ion, frac)
+            candidate.append(ion, ion_sites[index])
 
             candidate_converged, candidate_energy, relaxed = _relax(candidate, settings)
             if candidate_converged and candidate_energy < best_energy:
@@ -218,7 +261,7 @@ def build_minimal_stable_host(structure: Structure, settings: IntercalationSetti
     # Energy from the host up to the original full composition.
     converged, full_energy, full_relaxed = _relax(structure, settings)
     if not converged:
-        return float("inf"), 0, [], 0, None, "error"
+        return HostResult(float("inf"), float("inf"), 0, [], [], 0, None, "error")
 
     # N = ions still missing between the stable host and the full structure.
     N = num_ions - n_added
@@ -227,24 +270,29 @@ def build_minimal_stable_host(structure: Structure, settings: IntercalationSetti
     else:
         overall_dE = full_energy - host_energy - N * bulk_energy
 
-    return (host_energy / len(host), overall_dE,
-            [(N, full_relaxed.to(fmt="json"))], N, host.to(fmt="json"), "host_structure_found")
+    return HostResult(host_energy / len(host), host_energy, overall_dE,
+                      [(N, full_relaxed.to(fmt="json"))], [full_energy],
+                      N, host.to(fmt="json"), "host_structure_found")
 
 
-def intercalate_step(data: list, initial_structure_json: str,
+def intercalate_step(data: list, energies: list, initial_structure_json: str,
                      settings: IntercalationSettings) -> tuple:
     """
     Inserts one more working ion at the best available void and appends the result.
 
+    The previous composition's energy is carried in `energies` rather than recomputed, so
+    each step costs one relaxation per candidate site and nothing more.
+
     Args:
         data (list): Trajectory of (N, structure_json) pairs; the last entry is extended.
+        energies (list): Total energy of each trajectory entry, aligned with `data`.
         initial_structure_json (str): The original MP structure, used as the framework
             topology and cell-size reference.
         settings (IntercalationSettings): Run settings.
 
     Returns:
-        tuple: (data, N, status). Status is "intercalating" if a composition was accepted,
-               "intercalated" if the structure is full, or "intercalate_error".
+        tuple: (data, energies, N, status). Status is "intercalating" if a composition was
+               accepted, otherwise "intercalated".
     """
     ion = settings.working_ion
     bulk_energy = settings.bulk_energies[ion]
@@ -252,20 +300,16 @@ def intercalate_step(data: list, initial_structure_json: str,
 
     # Continue from the last computed composition; the new target has one more ion.
     previous_N, previous_json = data[-1]
+    previous_energy = energies[-1]
+    previous_structure = Structure.from_str(previous_json, fmt="json")
     N = previous_N + 1
-
-    # Re-relax the previous structure to get its reference energy.
-    converged, previous_energy, previous_structure = _relax(
-        Structure.from_str(previous_json, fmt="json"), settings)
-    if not converged:
-        return data, data[-1][0], "intercalate_error"
 
     candidate_sites = _candidate_sites(previous_structure, settings)
     if not candidate_sites:
-        return data, data[-1][0], "intercalated"
+        return data, energies, previous_N, "intercalated"
 
     # Insert an ion at each candidate site and keep the lowest-dE result.
-    best_dE, best_structure = float("inf"), None
+    best_dE, best_energy, best_structure = float("inf"), float("inf"), None
     for frac in candidate_sites:
         candidate = previous_structure.copy()
         candidate.append(ion, frac)
@@ -277,45 +321,47 @@ def intercalate_step(data: list, initial_structure_json: str,
 
         dE = candidate_energy - previous_energy - bulk_energy  # cost of inserting this one ion
         if dE < best_dE:
-            best_dE, best_structure = dE, relaxed
+            best_dE, best_energy, best_structure = dE, candidate_energy, relaxed
 
     # Stop if no candidate worked, the cell grew too much, or insertion is unfavourable.
     if (best_structure is None
             or cell_growth_exceeded(best_structure, initial_structure, settings.max_cell_growth)
             or best_dE > 0):
-        return data, data[-1][0], "intercalated"
+        return data, energies, previous_N, "intercalated"
 
-    data = data + [(N, best_structure.to(fmt="json"))]
-    return data, N, "intercalating"
+    return (data + [(N, best_structure.to(fmt="json"))],
+            energies + [best_energy], N, "intercalating")
 
 
-def get_ion_energy(data: list, host_json: str, settings: IntercalationSettings):
+def get_ion_energy(data: list, energies: list, host_json: str, host_energy: float,
+                   settings: IntercalationSettings) -> tuple:
     """
     Energies of the host and the fully intercalated structure.
 
+    Both structures were already relaxed when they were accepted, and their energies are
+    carried here, so this is pure arithmetic. That also keeps each stored energy consistent
+    with the structure stored alongside it.
+
     Returns:
-        tuple | None: (host_energy_per_atom, ion_energy_per_atom, dE), or None if either
-                      relaxation failed.
+        tuple: (host_energy_per_atom, ion_energy_per_atom, dE).
     """
     N = data[-1][0]
     host = Structure.from_str(host_json, fmt="json")
     full = Structure.from_str(data[-1][1], fmt="json")
-
-    host_converged, host_energy, _ = _relax(host, settings)
-    full_converged, full_energy, _ = _relax(full, settings)
-    if not host_converged or not full_converged:
-        return None
+    full_energy = energies[-1]
 
     return (host_energy / len(host),
             full_energy / len(full),
             full_energy - host_energy - N * settings.bulk_energies[settings.working_ion])
 
 
-def swap_working_ion(data: list, host_json: str, settings: IntercalationSettings) -> tuple:
+def swap_working_ion(data: list, host_json: str, host_energy: float,
+                     settings: IntercalationSettings) -> tuple:
     """
     Swaps the *inserted* ions for `settings.new_working_ion` and recomputes the energy.
 
-    Ions that were already present in the host are left untouched.
+    Ions already present in the host are left untouched. Only the swapped structure needs
+    relaxing; the host energy is carried in.
 
     Returns:
         tuple: (dE, energy_per_atom, structure_json, status). Status is "sodiated",
@@ -334,27 +380,20 @@ def swap_working_ion(data: list, host_json: str, settings: IntercalationSettings
     for index in inserted_indices:
         swapped.replace(index, new_ion)
 
-    host_converged, host_energy, _ = _relax(host, settings)
-    full_converged, swapped_energy, relaxed = _relax(swapped, settings)
-
-    # If the new-ion structure itself failed, there is no result to report.
-    if not full_converged:
+    converged, swapped_energy, relaxed = _relax(swapped, settings)
+    if not converged:
         return float("inf"), None, None, "sodiate_error"
 
-    energy_per_atom = swapped_energy / len(swapped)
-    structure_json = relaxed.to(fmt="json")
-
-    # The host reference is required for the energy difference.
-    if not host_converged:
-        return float("inf"), energy_per_atom, structure_json, "sodiate_error"
-
     dE = swapped_energy - host_energy - len(inserted_indices) * settings.bulk_energies[new_ion]
-    return dE, energy_per_atom, structure_json, "sodiated"
+    return dE, swapped_energy / len(swapped), relaxed.to(fmt="json"), "sodiated"
 
 
 def process_structure(mp_structure_json: str, settings: IntercalationSettings) -> dict:
     """
     Full per-material pipeline: build host, intercalate to saturation, swap the ion.
+
+    Energies are carried forward between stages rather than recomputed, so every stored
+    energy belongs to the structure stored beside it.
 
     Args:
         mp_structure_json (str): The MP structure as a JSON string.
@@ -381,24 +420,26 @@ def process_structure(mp_structure_json: str, settings: IntercalationSettings) -
     structure = Structure.from_str(mp_structure_json, fmt="json")
     has_ion = ion in {element.symbol for element in structure.composition.elements}
     data = [(0, mp_structure_json)]
-    host_json = ""
+    energies = [float("inf")]
+    host_json, host_energy = "", float("inf")
 
     if has_ion:
         # The host must be carved out of the structure before anything can be inserted.
-        host_energy_per_atom, _, host_data, N, host_json, status = build_minimal_stable_host(
-            structure, settings)
-        if status == "host_structure_found":
-            data = host_data
-            result.update({"host_energy_per_atom": host_energy_per_atom, "N": N,
-                           "host_structure": host_json,
+        host_result = build_minimal_stable_host(structure, settings)
+        if host_result.status == "host_structure_found":
+            data, energies = host_result.data, host_result.energies
+            host_json, host_energy = host_result.host_json, host_result.host_energy
+            result.update({"host_energy_per_atom": host_result.host_energy_per_atom,
+                           "N": host_result.N, "host_structure": host_json,
                            "data": json.dumps([[n, struct] for n, struct in data])})
-        result["status"] = status
+        result["status"] = host_result.status
     else:
         # No native working ion: only pursue hosts where the first insertion is favourable.
-        status, first_ion_dE = screen_first_ion(structure, settings)
+        status, first_ion_dE, host_energy, host = screen_first_ion(structure, settings)
         if status == "first_ion_checked" and first_ion_dE < settings.first_ion_energy_cutoff:
-            converged, host_energy, host = _relax(structure, settings)
             host_json = host.to(fmt="json")
+            # The relaxed host is where intercalation starts, and its energy is already known.
+            data, energies = [(0, host_json)], [host_energy]
             result.update({"host_energy_per_atom": host_energy / len(host),
                            "N": 0, "host_structure": host_json})
             status = "host_structure_found"
@@ -407,26 +448,21 @@ def process_structure(mp_structure_json: str, settings: IntercalationSettings) -
     if result["status"] == "host_structure_found":
         status = "intercalating"
         while status == "intercalating":
-            data, N, status = intercalate_step(data, mp_structure_json, settings)
-            # The trajectory is only recorded once intercalation actually runs; materials
-            # that never reach a usable host keep an empty trajectory.
+            data, energies, N, status = intercalate_step(
+                data, energies, mp_structure_json, settings)
             result.update({"N": N, "status": status,
                            "data": json.dumps([[n, struct] for n, struct in data])})
 
     if result["status"] == "intercalated":
-        energies = get_ion_energy(data, host_json, settings)
-        if energies is None:
-            result["status"] = "intercalate_error"
-            return result
-
-        host_energy_per_atom, ion_energy_per_atom, ion_dE = energies
+        host_energy_per_atom, ion_energy_per_atom, ion_dE = get_ion_energy(
+            data, energies, host_json, host_energy, settings)
         result.update({"host_energy_per_atom": host_energy_per_atom,
                        f"{ion}_energy_per_atom": ion_energy_per_atom,
                        f"{ion}_dE": ion_dE,
                        f"{ion}_structure": data[-1][1]})
 
         new_dE, new_energy_per_atom, new_structure_json, status = swap_working_ion(
-            data, host_json, settings)
+            data, host_json, host_energy, settings)
         if status == "sodiated":
             result.update({f"{new_ion}_dE": new_dE,
                            f"{new_ion}_energy_per_atom": new_energy_per_atom,

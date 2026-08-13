@@ -255,25 +255,48 @@ def _merge_close_sites(structure: Structure, sites: list, merge_distance: float)
     return kept
 
 
-def _symmetry_unique_sites(structure: Structure, sites: list, symprec: float,
-                           dedup_distance: float) -> list:
-    """Collapses sites that are equivalent under the structure's space group."""
+def get_symmetry_unique_site_indices(structure: Structure, sites: list, symprec: float = 0.1,
+                                     dedup_distance: float = 0.1) -> list:
+    """
+    Indices of one representative per symmetry-equivalent class among `sites`.
+
+    Two sites are equivalent when some symmetry operation of `structure` maps one onto the
+    other. Callers that must relax a structure per candidate site can use this to relax one
+    site per class instead of all of them, since equivalent sites give the same energy.
+
+    Args:
+        structure (Structure): Structure whose space group defines equivalence.
+        sites (list): Fractional coordinates of candidate sites.
+        symprec (float): Symmetry tolerance for SpacegroupAnalyzer.
+        dedup_distance (float): Two sites within this distance are considered identical.
+
+    Returns:
+        list: Indices into `sites`, one per equivalence class, in input order.
+    """
     symmops = SpacegroupAnalyzer(structure, symprec=symprec).get_symmetry_operations()
     lattice = structure.lattice
 
-    unique = []
-    for frac in sites:
+    representatives, kept = [], []
+    for index, frac in enumerate(sites):
         # Generate this site's full symmetry orbit; if any image coincides with an
         # already-kept site, this site is a duplicate.
         orbit = [op.operate(frac) % 1.0 for op in symmops]
         duplicate = any(
-            lattice.get_all_distances([image], [kept])[0][0] < dedup_distance
+            lattice.get_all_distances([image], [other])[0][0] < dedup_distance
             for image in orbit
-            for kept in unique
+            for other in kept
         )
         if not duplicate:
-            unique.append(frac)
-    return unique
+            representatives.append(index)
+            kept.append(frac)
+    return representatives
+
+
+def _symmetry_unique_sites(structure: Structure, sites: list, symprec: float,
+                           dedup_distance: float) -> list:
+    """Collapses sites that are equivalent under the structure's space group."""
+    indices = get_symmetry_unique_site_indices(structure, sites, symprec, dedup_distance)
+    return [sites[index] for index in indices]
 
 
 def get_interstitial_sites(

@@ -86,3 +86,32 @@ def test_get_inserted_ion_indices_matches_native_ions():
 def test_get_inserted_ion_indices_no_room():
     host = Structure(Lattice.cubic(5.0), ["Li", "O"], [[0, 0, 0], [0.5, 0.0, 0.0]])
     assert get_inserted_ion_indices(host, host, "Li") == []
+
+
+def test_symmetry_unique_site_indices_collapses_equivalent_sites():
+    from mpelectroml.structure_manipulation import get_symmetry_unique_site_indices
+
+    # In a cubic cell the six face centres are one symmetry orbit, so only one survives.
+    structure = Structure(Lattice.cubic(4.0), ["Mg"], [[0, 0, 0]])
+    faces = [[0.5, 0, 0], [0, 0.5, 0], [0, 0, 0.5],
+             [0.5, 0.5, 0], [0.5, 0, 0.5], [0, 0.5, 0.5]]
+    indices = get_symmetry_unique_site_indices(structure, [np.array(f) for f in faces])
+    assert len(indices) < len(faces)
+    assert indices[0] == 0                       # representatives keep input order
+    assert all(0 <= i < len(faces) for i in indices)
+
+
+def test_symmetry_unique_site_indices_keeps_inequivalent_sites():
+    from mpelectroml.structure_manipulation import get_symmetry_unique_site_indices
+
+    # An edge centre and the body centre are not equivalent in this cell.
+    structure = Structure(Lattice.cubic(4.0), ["Mg"], [[0, 0, 0]])
+    sites = [np.array([0.5, 0, 0]), np.array([0.5, 0.5, 0.5])]
+    assert len(get_symmetry_unique_site_indices(structure, sites)) == 2
+
+
+def test_symmetry_unique_site_indices_empty():
+    from mpelectroml.structure_manipulation import get_symmetry_unique_site_indices
+
+    structure = Structure(Lattice.cubic(4.0), ["Mg"], [[0, 0, 0]])
+    assert get_symmetry_unique_site_indices(structure, []) == []
