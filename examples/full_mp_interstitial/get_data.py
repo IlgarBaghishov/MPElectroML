@@ -45,7 +45,11 @@ SKIP_MP_RETRIEVAL = False   # reuse MATERIALS_HDF5 instead of querying MP
 SHARD_RANK = int(os.environ.get("SLURM_PROCID", 0))
 SHARD_COUNT = int(os.environ.get("SLURM_NTASKS", 1))
 
-# Optional further bounds applied *within* this shard (for resuming a partial run).
+# Continue from an existing output file, skipping rows already completed. Set False to
+# recompute a shard from scratch.
+RESUME = True
+
+# Optional further bounds applied *within* this shard.
 IDX_INIT = 0
 IDX_FINAL = -1
 CHECKPOINT_EVERY = 100
@@ -105,7 +109,7 @@ def run_analysis_workflow():
         output_filename = OUTPUT_FILENAME.replace(".h5", f"_shard{SHARD_RANK}.h5")
     logger.info(f"shard {SHARD_RANK + 1}/{SHARD_COUNT}: {len(df)} materials -> {output_filename}")
 
-    add_intercalation_data_to_df(
+    df = add_intercalation_data_to_df(
         df,
         settings=SETTINGS,
         file_dirpath=FILE_DIRPATH,
@@ -114,6 +118,7 @@ def run_analysis_workflow():
         idx_final=IDX_FINAL,
         checkpoint_every=CHECKPOINT_EVERY,
         output_filename=output_filename,
+        resume=RESUME,
     )
     logger.info("Workflow complete.")
 

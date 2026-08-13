@@ -34,6 +34,15 @@ from mpelectroml.utils import HDF5_KEY_INTERCALATION
 
 logger = logging.getLogger(__name__)
 
+# Statuses process_structure can return. A row carrying one of these has been fully
+# processed, so a resumed run skips it. Every code path ends in one of these, which is
+# what makes resuming safe: a row is either untouched ("") or finished.
+COMPLETED_STATUSES = frozenset({
+    "sodiated", "sodiate_error", "sodiate_not_applicable", "intercalate_error",
+    "mp_relax_error", "no_voronoi_sites", "no_host", "first_ion_checked", "error",
+    "processing_error",
+})
+
 
 @dataclass
 class IntercalationSettings:
@@ -427,6 +436,40 @@ def process_structure(mp_structure_json: str, settings: IntercalationSettings) -
     return result
 
 
+def _load_previous_results(df, output_path, structure_column):
+    """
+    Returns a previously written frame to continue from, or None.
+
+    Only adopts the old frame when it is unambiguously the same work: same row count and
+    identical structures in the same order. Anything else is refused rather than risking
+    results being written against the wrong rows.
+    """
+    if not os.path.exists(output_path):
+        return None
+    try:
+        previous = pd.read_hdf(output_path)
+    except Exception as e:
+        logger.warning(f"Could not read {output_path} to resume ({e}); starting fresh.")
+        return None
+
+    if len(previous) != len(df):
+        logger.warning(f"Refusing to resume: {output_path} has {len(previous)} rows, "
+                       f"input has {len(df)}. Starting fresh.")
+        return None
+    if structure_column not in previous.columns:
+        logger.warning(f"Refusing to resume: {output_path} lacks '{structure_column}'. Starting fresh.")
+        return None
+
+    old = previous[structure_column].reset_index(drop=True)
+    new = df[structure_column].reset_index(drop=True)
+    if not old.equals(new):
+        logger.warning(f"Refusing to resume: structures in {output_path} do not match the "
+                       "input frame. Starting fresh.")
+        return None
+
+    return previous.reset_index(drop=True)
+
+
 def add_intercalation_data_to_df(
     df: pd.DataFrame,
     settings: IntercalationSettings,
@@ -435,7 +478,9 @@ def add_intercalation_data_to_df(
     idx_init: int = 0,
     idx_final: int = -1,
     checkpoint_every: int = 100,
-    output_filename: str | None = None
+    output_filename: str | None = None,
+    resume: bool = True,
+    redo_statuses: set | None = None
 ) -> pd.DataFrame:
     """
     Runs the intercalation pipeline over rows `idx_init` to `idx_final` of `df`.
@@ -453,9 +498,14 @@ def add_intercalation_data_to_df(
         idx_final (int): One past the last row index; -1 means to the end.
         checkpoint_every (int): Rows between HDF5 checkpoints.
         output_filename (str | None): Override the default output file name.
+        resume (bool): If an output file for the same structures exists, continue from it
+            and skip rows already carrying a completed status.
+        redo_statuses (set | None): Statuses to recompute rather than skip when resuming,
+            e.g. {"processing_error"} to retry rows lost to a transient failure.
 
     Returns:
-        pd.DataFrame: The DataFrame with intercalation columns filled in.
+        pd.DataFrame: The DataFrame with intercalation columns filled in. When resuming,
+        this is the reloaded frame, so callers should use the return value.
     """
     os.makedirs(file_dirpath, exist_ok=True)
     if output_filename is None:
@@ -465,6 +515,12 @@ def add_intercalation_data_to_df(
     if structure_column not in df.columns:
         logger.error(f"Structure column '{structure_column}' not found in DataFrame.")
         return df
+
+    if resume:
+        previous = _load_previous_results(df, output_path, structure_column)
+        if previous is not None:
+            df = previous
+            logger.info(f"Resuming from {output_path}.")
 
     ion, new_ion = settings.working_ion, settings.new_working_ion
     text_columns = ["status", "data", "host_structure", f"{ion}_structure", f"{new_ion}_structure"]
@@ -486,10 +542,17 @@ def add_intercalation_data_to_df(
     idx_init = max(0, idx_init)
     idx_final = min(df.shape[0], idx_final)
 
+    skip_statuses = COMPLETED_STATUSES - set(redo_statuses or ())
+
     logger.info(f"Starting intercalation ({ion} -> {new_ion}) with model '{settings.model_name}'.")
     logger.info(f"Processing DataFrame rows from index {idx_init} to {idx_final - 1}.")
+    already_done = sum(1 for i in range(idx_init, idx_final) if df.at[i, "status"] in skip_statuses)
+    if already_done:
+        logger.info(f"Skipping {already_done} row(s) already completed.")
 
     for i in range(idx_init, idx_final):
+        if df.at[i, "status"] in skip_statuses:
+            continue
         logger.info(f"Processing row {i}...")
         try:
             result = process_structure(df.at[i, structure_column], settings)
