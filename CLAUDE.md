@@ -35,6 +35,47 @@ The library is the `mpelectroml/` package; `__init__.py` re-exports the public f
 
 Both backends lazily initialize their model into a module-level singleton (`_FAIRCHEM_PREDICTOR`, `_CHGNET_PREDICTOR`, `_CHGNET_RELAXER`) so the model is loaded once per process.
 
+### Second pipeline: full-MP interstitial intercalation
+
+`intercalation.py` implements a second, independent pipeline that does **not** rely on MP
+insertion-electrode pairs. It starts from arbitrary hosts, discovers its own insertion
+sites, and fills them iteratively:
+
+1. `data_retrieval.get_materials_summary(api_key, fields, **search_kwargs)` - generic
+   wrapper over `mpr.materials.summary.search`; selection filters (e.g. `theoretical=False`,
+   `energy_above_hull=(0, 0.1)`) are passed by the caller, not baked into the library.
+   Structures are returned as **JSON strings** (not pickled Structure objects) so the
+   resulting HDF5 stays readable across numpy/pymatgen versions.
+2. `structure_manipulation.get_interstitial_sites(structure, working_ion, ...)` - candidate
+   voids from Voronoi vertices of a 3x3x3 supercell, filtered by host distance, merged when
+   near-coincident, then deduplicated by space-group orbit.
+3. `intercalation.build_minimal_stable_host` - strips the working ion, relaxes, and adds
+   ions back one at a time until the framework is stable (converged, bond network unchanged
+   per `framework_bonds_changed`, cell not grown past `max_cell_growth`).
+4. `intercalation.intercalate_step` - inserts one ion at the best void, repeating until
+   insertion becomes unfavourable (dE > 0), the cell grows too much, or no voids remain.
+5. `intercalation.swap_working_ion` - swaps only the *inserted* ions (identified by
+   `get_inserted_ion_indices`) for the second ion and recomputes the energy.
+
+`add_intercalation_data_to_df` drives these over a DataFrame with the same
+checkpoint/shard contract as `add_energy_forces_to_df` (`idx_init`/`idx_final`, periodic
+`to_hdf`). There is no multiprocessing pool: parallelism comes from running one process
+per shard, as elsewhere in the repo.
+
+`calculations.relax_structure(structure, ..., reference_structure=...)` is the shared
+primitive this pipeline needs: it returns `(converged, total_energy, structure)` rather
+than a per-atom energy, and can abort mid-relaxation via `BondBrokenError` if the framework
+topology changes. `assign_calculator` is parameterized (`model_name`, `device`, `task_name`,
+`cache_dir`, the latter defaulting to `$FAIRCHEM_CACHE_DIR`) and caches one predictor per
+distinct combination, so the two pipelines can use different MLIPs in one process.
+
+**This pipeline stores energies, not voltages.** Voltages come from
+`datasets.compute_voltages`, which applies `V = -dE / (N * z) + E0(X+/X)` with the SHE
+potentials in `datasets.SHE_POTENTIALS`. `datasets.split_and_export` is the single
+definition of the train/test/val split used by both datasets. `normalize_dataset` maps
+either pipeline onto a shared column schema and tags rows with `source`; `merge_datasets`
+is a stub pending regeneration of the electrode dataset with a matching MLIP.
+
 `utils.py` holds `get_api_key` (reads `MP_API_KEY`), `setup_logging`, and the two HDF5 keys: `HDF5_KEY_ELECTRODE_PAIRS = "data"` (pairs + structures file `{ion}_electrode_data.h5`) and `HDF5_KEY_WITH_ENERGIES = "data_with_energies"` (file with energies). Every module uses `logging.getLogger(__name__)`; functions log-and-continue rather than raise, returning `None`/empty/`[None, None, None]` on failure — check return values rather than relying on exceptions.
 
 See `README.md` for the full column-by-column schema of the energies DataFrame.
@@ -45,6 +86,7 @@ See `README.md` for the full column-by-column schema of the energies DataFrame.
 
 ## examples/ directory
 
-`examples/` is not a tidy demo folder — it is the working area for individual HPC runs (TACC Vista, SLURM). The canonical pipeline driver is `examples/run_analysis.py`: configuration is a block of module-level constants at the top (`WORKING_ION`, `NEW_WORKING_IONS`, `CALC_TYPES`, `CALC_IDX_INITS/FINALS`, `SKIP_*`/`RESUME_FROM_FILES` flags) — there is no argparse. Each subdirectory (`Li_Na_electrodes_uma_m/`, `Mg_electrodes_uma_m/`, `Na_chgnet/`, …) contains a `get_data.py` that is a copy of `run_analysis.py` with those constants edited for that experiment, plus a SLURM `run.sh` that does `python -u get_data.py`. The `*_to_test_assumptions_*`, `li_data_*`, and `combine_*`/`preprocessing` notebooks are downstream data-prep/analysis, not part of the library.
+`examples/full_mp_interstitial/` holds the interstitial run: `get_data.py` (config +
+driver) and `make_dataset.py` (HDF5 -> train/test/val CSVs). Otherwise, `examples/` is not a tidy demo folder — it is the working area for individual HPC runs (TACC Vista, SLURM). The canonical pipeline driver is `examples/run_analysis.py`: configuration is a block of module-level constants at the top (`WORKING_ION`, `NEW_WORKING_IONS`, `CALC_TYPES`, `CALC_IDX_INITS/FINALS`, `SKIP_*`/`RESUME_FROM_FILES` flags) — there is no argparse. Each subdirectory (`Li_Na_electrodes_uma_m/`, `Mg_electrodes_uma_m/`, `Na_chgnet/`, …) contains a `get_data.py` that is a copy of `run_analysis.py` with those constants edited for that experiment, plus a SLURM `run.sh` that does `python -u get_data.py`. The `*_to_test_assumptions_*`, `li_data_*`, and `combine_*`/`preprocessing` notebooks are downstream data-prep/analysis, not part of the library.
 
 `.gitignore` deliberately excludes most run artifacts (`run.sh`, `ll_out*`, `*.h5`, `*.log`, `$SCRATCH/`) with a few explicit `!` un-ignore exceptions (e.g. `final_dataset.h5`, `combine_Li_Na copy.ipynb`). Check `.gitignore` before assuming a file under `examples/` is tracked.

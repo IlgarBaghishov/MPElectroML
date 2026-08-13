@@ -146,6 +146,49 @@ else:
     print("Failed to retrieve Li-ion pairs.")
 ```
 
+## Interstitial intercalation pipeline (full Materials Project)
+
+The pipeline above requires a Materials Project *insertion electrode* entry, so it can only
+place working ions on sites MP already reports. A second pipeline lifts that restriction:
+it takes any host, discovers candidate interstitial sites itself, and fills them one ion at
+a time.
+
+```python
+from mpelectroml.data_retrieval import get_materials_summary
+from mpelectroml.intercalation import IntercalationSettings, add_intercalation_data_to_df
+from mpelectroml.datasets import normalize_dataset, compute_voltages, split_and_export
+
+df = get_materials_summary(
+    api_key,
+    fields=["material_id", "structure", "formula_pretty", "energy_per_atom", "energy_above_hull"],
+    theoretical=False, energy_above_hull=(0, 0.1),
+)
+
+settings = IntercalationSettings(working_ion="Li", new_working_ion="Na",
+                                 model_name="uma-s-1p2", optimizer="fire",
+                                 fmax=0.02, steps=500)
+
+add_intercalation_data_to_df(df, settings, file_dirpath=".", idx_init=0, idx_final=-1)
+
+df = compute_voltages(normalize_dataset(df, source="full_mp_interstitial"))
+split_and_export(df, "li_data_interstitial", max_atoms=20)
+```
+
+Each row gains `status`, `N` (ions inserted), `host_structure`/`host_energy_per_atom`,
+`{ion}_structure`/`{ion}_energy_per_atom`/`{ion}_dE` for both ions, and `data` (the
+insertion trajectory). Structures are JSON strings. The `status` column records where a
+material stopped: `sodiated` (complete), `no_host`, `no_voronoi_sites`, `first_ion_checked`
+(insertion not favourable enough), `intercalate_error`, `sodiate_error`, or
+`sodiate_not_applicable`.
+
+**Energies, not voltages, are stored.** Voltages come from `datasets.compute_voltages`,
+which applies `V = -dE / (N * z) + E0(X+/X)` vs. SHE. Both this pipeline and the electrode
+pipeline use `datasets.split_and_export` for the train/test/val split, so the two datasets
+are directly comparable.
+
+To use several GPUs, run one process per shard with disjoint `idx_init`/`idx_final` ranges
+and distinct output files, then concatenate. See `examples/full_mp_interstitial/`.
+
 ## Data Output
 
 The pipeline primarily generates HDF5 files in the specified output directory:

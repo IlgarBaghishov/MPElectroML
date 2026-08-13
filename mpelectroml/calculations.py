@@ -1,27 +1,48 @@
 import numpy as np
 import pandas as pd
 from ase import Atoms
-from ase.optimize import LBFGS
+from ase.optimize import FIRE, LBFGS
 from ase.filters import FrechetCellFilter
 from fairchem.core import pretrained_mlip, FAIRChemCalculator
 from pymatgen.core import Structure
+from pymatgen.io.ase import AseAtomsAdaptor
 import logging
 import os
 from mpelectroml.utils import HDF5_KEY_WITH_ENERGIES
-from chgnet.model import CHGNet, StructOptimizer
+from mpelectroml.structure_manipulation import framework_bonds_changed
 
 logger = logging.getLogger(__name__)
-_FAIRCHEM_PREDICTOR = None
+# FAIRChem predictors are cached per (model_name, device, cache_dir) so that more than
+# one model can be used in a single process without reloading weights each call.
+_FAIRCHEM_PREDICTORS = {}
 _CHGNET_PREDICTOR = None
 _CHGNET_RELAXER = None
 
+DEFAULT_UMA_MODEL = "uma-m-1p1"
+DEFAULT_UMA_TASK = "omat"
+_ASE_OPTIMIZERS = {"lbfgs": LBFGS, "fire": FIRE}
 
-def assign_calculator(atoms: Atoms | None) -> Atoms | None:
+
+def assign_calculator(
+    atoms: Atoms | None,
+    model_name: str = DEFAULT_UMA_MODEL,
+    device: str = "cuda",
+    task_name: str = DEFAULT_UMA_TASK,
+    cache_dir: str | None = None
+) -> Atoms | None:
     """
-    Assigns a FAIRChemCalculator (using 'uma-sm' model by default) to an ASE Atoms object.
+    Assigns a FAIRChemCalculator to an ASE Atoms object.
+
+    The underlying predictor is cached per (model_name, device, cache_dir), so repeated
+    calls reuse loaded weights and several models can coexist in one process.
 
     Args:
         atoms (ase.Atoms | None): The ASE Atoms object.
+        model_name (str): FAIRChem model. See `fairchem.core.pretrained_mlip.available_models`.
+        device (str): "cuda" or "cpu".
+        task_name (str): FAIRChem task head (e.g. "omat").
+        cache_dir (str | None): Where model weights are cached. Defaults to the
+            FAIRCHEM_CACHE_DIR environment variable if set, otherwise FAIRChem's own default.
 
     Returns:
         ase.Atoms | None: The Atoms object with the calculator assigned, or None if input was None.
@@ -29,30 +50,112 @@ def assign_calculator(atoms: Atoms | None) -> Atoms | None:
     """
     if atoms is None:
         return None
+    if cache_dir is None:
+        cache_dir = os.environ.get("FAIRCHEM_CACHE_DIR")
     try:
-        # Using "uma-sm". Users can check `fairchem.core.pretrained_mlip.available_models` for other options.
-        # Device can be "cuda" or "cpu" depending on if a GPU is available and PyTorch is CUDA-enabled.
-        model_name = "uma-m-1p1"
-        device = "cuda"
-        global _FAIRCHEM_PREDICTOR
-        if _FAIRCHEM_PREDICTOR is None:
+        key = (model_name, device, cache_dir)
+        if key not in _FAIRCHEM_PREDICTORS:
             logger.info(f"Initializing FAIRChem predictor: {model_name} on {device}...")
             try:
-                _FAIRCHEM_PREDICTOR = pretrained_mlip.get_predict_unit(model_name, device=device,
-                                                                       cache_dir="/scratch/08405/ilgar/.cache/farichem")
+                kwargs = {"cache_dir": cache_dir} if cache_dir else {}
+                _FAIRCHEM_PREDICTORS[key] = pretrained_mlip.get_predict_unit(model_name, device=device,
+                                                                             **kwargs)
                 logger.info("FAIRChem predictor initialized successfully.")
             except Exception as e:
                 logger.error(f"Failed to initialize FAIRChem predictor ('{model_name}'): {e}")
-                _FAIRCHEM_PREDICTOR = None
                 return atoms
-        calc = FAIRChemCalculator(_FAIRCHEM_PREDICTOR, task_name="omat")
+        calc = FAIRChemCalculator(_FAIRCHEM_PREDICTORS[key], task_name=task_name)
         atoms.calc = calc
-        logger.debug(f"Assigned FAIRChem calculator (uma-sm) to atoms: {atoms.get_chemical_formula()}")
+        logger.debug(f"Assigned FAIRChem calculator ({model_name}) to atoms: {atoms.get_chemical_formula()}")
     except Exception as e:
         logger.error(f"Error assigning FAIRChem calculator to atoms ({atoms.get_chemical_formula()}): {e}. "
                      "Atoms object will not have a calculator.")
         atoms.calc = None  # Ensure calc is None if assignment fails
     return atoms
+
+
+class BondBrokenError(Exception):
+    """Raised mid-relaxation when the framework bond topology changes vs. a reference."""
+
+
+def relax_structure(
+    structure: Structure,
+    fmax: float = 0.05,
+    steps: int = 100,
+    optimizer: str = "lbfgs",
+    optimizer_kwargs: dict | None = None,
+    reference_structure: Structure | None = None,
+    working_ion: str | None = None,
+    check_interval: int = 2,
+    **calc_kwargs
+) -> tuple:
+    """
+    Relaxes a Pymatgen Structure (positions and cell) and reports convergence.
+
+    Unlike `calculate_energy_and_forces_from_Structure`, this returns a convergence flag
+    and a *total* energy, which the intercalation pipeline needs in order to accept or
+    reject candidate structures.
+
+    If `reference_structure` is given, the framework bond network is checked every
+    `check_interval` optimizer steps and the relaxation is aborted (reported as not
+    converged, with infinite energy) if the topology changes.
+
+    Args:
+        structure (Structure): Structure to relax.
+        fmax (float): Force convergence tolerance (eV/Angstrom).
+        steps (int): Maximum optimizer steps.
+        optimizer (str): "lbfgs" or "fire".
+        optimizer_kwargs (dict | None): Extra keyword arguments for the ASE optimizer.
+        reference_structure (Structure | None): Framework-topology reference; enables the check.
+        working_ion (str | None): Ion excluded from the bond network during that check.
+        check_interval (int): Optimizer steps between topology checks.
+        **calc_kwargs: Passed to `assign_calculator` (model_name, device, task_name, cache_dir).
+
+    Returns:
+        tuple: (converged: bool, energy: float, relaxed_structure: Structure).
+               Energy is float("inf") if the relaxation was aborted or failed.
+    """
+    if optimizer.lower() not in _ASE_OPTIMIZERS:
+        raise ValueError(f"Unknown optimizer '{optimizer}'. Expected one of {sorted(_ASE_OPTIMIZERS)}.")
+    optimizer_cls = _ASE_OPTIMIZERS[optimizer.lower()]
+
+    atoms = AseAtomsAdaptor.get_atoms(structure)
+    atoms = assign_calculator(atoms, **calc_kwargs)
+    if atoms is None or atoms.calc is None:
+        logger.warning("Cannot relax structure: no calculator assigned.")
+        return False, float("inf"), structure
+
+    converged = False
+    stopped_early = False
+
+    def check_bonds():
+        if framework_bonds_changed(reference_structure, AseAtomsAdaptor.get_structure(atoms), working_ion):
+            raise BondBrokenError
+
+    try:
+        # FrechetCellFilter lets both atomic positions and the cell relax.
+        dyn = optimizer_cls(FrechetCellFilter(atoms), logfile=None, **(optimizer_kwargs or {}))
+        if reference_structure is not None:
+            dyn.attach(check_bonds, interval=check_interval)
+        converged = bool(dyn.run(fmax=fmax, steps=steps))
+    except BondBrokenError:
+        # Framework bond broke or formed: stop and reject this structure.
+        converged, stopped_early = False, True
+    except Exception as e:
+        # Any other failure (OOM, linalg, calculator errors) is a hard reject.
+        logger.info(f"RELAX ERROR: {type(e).__name__}: {e}")
+        converged = False
+
+    if stopped_early:
+        energy = float("inf")
+    else:
+        try:
+            energy = atoms.get_potential_energy()
+        except Exception as e:
+            logger.info(f"ENERGY ERROR: {type(e).__name__}: {e}")
+            energy, converged = float("inf"), False
+
+    return converged, energy, AseAtomsAdaptor.get_structure(atoms)
 
 
 def relax_atoms(atoms: Atoms | None, fmax: float = 0.05, steps: int = 100) -> Atoms | None:
@@ -137,6 +240,9 @@ def calculate_energy_and_forces_from_Structure(
 
         elif model_name.lower() == "chgnet":
             try:
+                # Imported lazily so the package works without CHGNet installed.
+                from chgnet.model import CHGNet, StructOptimizer
+
                 global _CHGNET_PREDICTOR, _CHGNET_RELAXER
                 if _CHGNET_PREDICTOR is None:
                     logger.info("Initializing CHGNet predictor...")
