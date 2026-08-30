@@ -75,7 +75,8 @@ def create_new_working_ion_discharge_structures(
     match_stats = {"unmatched_complex": 0, "original_ion_in_charge_host": 0, "processed_rows": 0}
 
     for i in range(df_pairs.shape[0]):
-        original_working_ion_i = str(df_pairs.at[i, 'working_ion']) if original_working_ion == '' else original_working_ion
+        original_working_ion_i = (str(df_pairs.at[i, 'working_ion'])
+                                  if original_working_ion == '' else original_working_ion)
         match_stats["processed_rows"] += 1
         charge_struct_pmg = df_pairs.at[i, 'charge_structure']
         discharge_struct_pmg = df_pairs.at[i, 'discharge_structure']
@@ -167,15 +168,17 @@ def create_new_working_ion_discharge_structures(
                                            f"charge structure and it is not {original_working_ion_i} but "
                                            f"{site.species_string}.")
         else:
-            logger.debug(f"Row {i}: '{original_working_ion_i}' not in charge formula. Attempting simple replacement in "
-                         f"discharge structure for '{new_working_ion}'.")
+            logger.debug(f"Row {i}: '{original_working_ion_i}' not in charge formula. "
+                         f"Attempting simple replacement in discharge structure "
+                         f"for '{new_working_ion}'.")
             if original_working_ion_i in Composition(new_discharge_structure.formula).get_el_amt_dict():
                 new_discharge_structure.replace_species({original_working_ion_i: new_working_ion})
                 new_discharge_structure = new_discharge_structure
             else:
-                logger.warning(f"Row {i}: Simple replacement: '{original_working_ion_i}' not found in discharge formula "
-                               f"'{new_discharge_structure.formula}'. Cannot create '{new_working_ion}' variant. "
-                               "Structure set to None.")
+                logger.warning(f"Row {i}: Simple replacement: '{original_working_ion_i}' "
+                               f"not found in discharge formula "
+                               f"'{new_discharge_structure.formula}'. Cannot create "
+                               f"'{new_working_ion}' variant. Structure set to None.")
                 new_discharge_structure = None
 
         new_discharge_structure_list.append(new_discharge_structure)

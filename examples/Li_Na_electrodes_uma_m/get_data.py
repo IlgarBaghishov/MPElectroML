@@ -19,7 +19,7 @@ from mpelectroml.utils import get_api_key, setup_logging, HDF5_KEY_ELECTRODE_PAI
 # --- Configuration Variables (replaces argparse) ---
 # Main settings
 WORKING_ION = ""  # Primary working ion for initial data retrieval
-NEW_WORKING_IONS = ["Li","Na"]  # List of new working ions to substitute
+NEW_WORKING_IONS = ["Li", "Na"]  # List of new working ions to substitute
 FILE_DIRPATH = "."  # Directory for HDF5 data files and logs
 
 # Workflow control flags
@@ -36,8 +36,8 @@ MP_SUMMARY_FIELDS = ["material_id", "structure", "energy_per_atom", "origins"]
 
 # Calculation indexing (applies if calculations are not skipped)
 CALC_TYPES = NEW_WORKING_IONS + ["charge"]  # Types of structures to calculate energies/forces for
-CALC_IDX_INITS = [0,0,0]  # Start index for each type of structure (must match CALC_TYPES length)
-CALC_IDX_FINALS = [-1,-1,-1]  # End index for each type of structure (-1 means all remaining)
+CALC_IDX_INITS = [0, 0, 0]  # Start index for each type of structure (must match CALC_TYPES length)
+CALC_IDX_FINALS = [-1, -1, -1]  # End index for each type of structure (-1 means all remaining)
 
 # Logging settings
 LOG_LEVEL = "INFO"  # "DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"
