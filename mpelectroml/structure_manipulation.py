@@ -295,10 +295,13 @@ def get_symmetry_unique_site_indices(structure: Structure, sites: list, symprec:
     return representatives
 
 
-def _symmetry_unique_sites(structure: Structure, sites: list, symprec: float,
-                           dedup_distance: float) -> list:
+def _symmetry_unique_sites(structure: Structure, sites: list, symprec: float, dedup_distance: float) -> list:
     """Collapses sites that are equivalent under the structure's space group."""
-    indices = get_symmetry_unique_site_indices(structure, sites, symprec, dedup_distance)
+    try:
+        indices = get_symmetry_unique_site_indices(structure, sites, symprec, dedup_distance)
+    except Exception as e:
+        logger.info(f"Symmetry reduction unavailable ({type(e).__name__}: {e}); using all sites.")
+        return sites
     return [sites[index] for index in indices]
 
 

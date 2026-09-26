@@ -16,6 +16,7 @@ Energies (not voltages) are stored. Voltages are derived downstream by
 import json
 import logging
 import os
+import warnings
 from dataclasses import dataclass, field
 from typing import NamedTuple
 
@@ -35,6 +36,8 @@ from mpelectroml.structure_manipulation import (
 from mpelectroml.utils import HDF5_KEY_INTERCALATION
 
 logger = logging.getLogger(__name__)
+
+warnings.filterwarnings("ignore", message="logm result may be inaccurate.*", category=RuntimeWarning)
 
 # Statuses process_structure can return. A row carrying one of these has been fully
 # processed, so a resumed run skips it. Every code path ends in one of these, which is
@@ -91,7 +94,7 @@ class IntercalationSettings:
     optimizer_kwargs: dict = field(default_factory=lambda: {
         "dt": 0.05, "maxstep": 0.1, "dtmax": 0.2, "downhill_check": False})
     symmetry_reduce_host_sites: bool = True
-    model_name: str = "uma-s-1p2"
+    model_name: str = "uma-s-1p2p1"
     device: str = "cuda"
     task_name: str = "omat"
     cache_dir: str | None = None
