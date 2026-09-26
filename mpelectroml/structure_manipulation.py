@@ -304,6 +304,7 @@ def _symmetry_unique_sites(structure: Structure, sites: list, symprec: float, de
         return sites
     return [sites[index] for index in indices]
 
+
 def get_interstitial_sites(
     structure: Structure,
     working_ion: str,
